@@ -194,9 +194,9 @@ class Hlm(ABC):
         log.info("Initial values: %s", self.initial_values)
 
         for node_id in self.network.nodes:
-            self.network.nodes[node_id]["current_states"] = (
-                self.initial_values.to_array()
-            )
+            self.network.nodes[node_id][
+                "current_states"
+            ] = self.initial_values.to_array()
 
     def _initialize_time(self) -> None:
         """Load mandatory time fields and start the clock."""
@@ -421,6 +421,31 @@ class Hlm(ABC):
 
         self.network.nodes[node_id]["ode_result"] = ode_result
 
+        self._update_current_states(node_id)
+        self._stack_results(node_id)
+
+    def _update_current_states(self, node_id: int):
+        """Set node.current_states."""
+        node = self.network.nodes[node_id]
+        node["current_states"] = node["ode_result"].y[:, -1]
+
+    def _stack_results(self, node_id: int):
+        """Stack ode_results for a node."""
+        node = self.network.nodes[node_id]
+        ode_result = node["ode_result"]
+
+        if "ode_result_t" not in node:
+            node["ode_result_t"] = ode_result.t
+        else:
+            node["ode_result_t"] = np.hstack(
+                (node["ode_result_t"], ode_result.t),
+            )
+
+        if "ode_result_y" not in node:
+            node["ode_result_y"] = ode_result.y
+        else:
+            node["ode_result_y"] = np.hstack((node["ode_result_y"], ode_result.y))
+
     def _run_until(self, end_time: float) -> None:
         """Advance model state until the given time."""
         node_ids = self.get_nodes_in_reverse_topological_order()
@@ -428,22 +453,6 @@ class Hlm(ABC):
         dt = np.array(self.current_time).astype("datetime64[s]")
         for node_id in tqdm(node_ids, unit="node", desc=f"{dt}"):
             self._solve_ivp_node(node_id, end_time)
-
-            node = self.network.nodes[node_id]
-            node["current_states"] = node["ode_result"].y[:, -1]
-
-            ode_result = node["ode_result"]
-            if "ode_result_t" not in node:
-                node["ode_result_t"] = ode_result.t  # [-1]
-            else:
-                node["ode_result_t"] = np.hstack(
-                    (node["ode_result_t"], ode_result.t),
-                )
-
-            if "ode_result_y" not in node:
-                node["ode_result_y"] = ode_result.y
-            else:
-                node["ode_result_y"] = np.hstack((node["ode_result_y"], ode_result.y))
 
         self._get_current_states()
         self._get_current_forcings()  # to be able to get forcings at time 0 before the first update
