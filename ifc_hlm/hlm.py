@@ -410,7 +410,9 @@ class Hlm(ABC):
             t_span=[self.current_time, target_time],
             t_eval=t_eval,
             y0=self.network.nodes[node_id]["current_states"],
-            method=self.config["ode_solver"],
+            method=self.config["ode_solver"]["method"],
+            atol=float(self.config["ode_solver"]["atol"]),
+            rtol=float(self.config["ode_solver"]["rtol"]),
             dense_output=True,
         )
 
