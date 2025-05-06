@@ -413,6 +413,7 @@ class Hlm(ABC):
             method=self.config["ode_solver"]["method"],
             atol=float(self.config["ode_solver"]["atol"]),
             rtol=float(self.config["ode_solver"]["rtol"]),
+            max_step=float(self.config["ode_solver"]["max_step"]),
             dense_output=True,
         )
 
