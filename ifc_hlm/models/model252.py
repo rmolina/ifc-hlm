@@ -1,4 +1,4 @@
-"""Model254 module."""
+"""Model252 module."""
 
 from dataclasses import dataclass, field
 
@@ -18,8 +18,8 @@ S_R = 1.0  # m. Ref val
 
 
 @dataclass
-class Model254NodeParameters(NodeParameters):
-    """Model254 node parameters."""
+class Model252NodeParameters(NodeParameters):
+    """Model252 node parameters."""
 
     a_i: float
     l_i: float
@@ -30,16 +30,13 @@ class Model254NodeParameters(NodeParameters):
 
 
 @dataclass
-class Model254States(ModelStates):
-    """Model254 states."""
+class Model252States(ModelStates):
+    """Model252 states."""
 
     q: float = 1.0e-6  # Channel discharge [m**3 s**-1]
     s_p: float = 0.0  # Water ponded on hillslope surface [m]
     s_t: float = 0.0  # Effective water depth in the top soil layer [m]
     s_s: float = 0.0  # Effective water depth in hillslope subsurface [m]
-    s_precip: float = 0.0  # Total fallen precipitation from time 0 to t [m]
-    v_r: float = 0.0  # Total flux of water from runoff from time 0 to t [m**3 s**-1]
-    q_b: float = 1.0e-6  # Channel discharge from baseflow [m**3 s**-1]
 
     @classmethod
     def init(cls, arr: NDArray[np.float64]):
@@ -49,10 +46,6 @@ class Model254States(ModelStates):
             s_p=arr[1],
             s_t=arr[2],
             s_s=arr[3],
-            s_precip=arr[4],
-            v_r=arr[5],
-            q_b=max(0.001, arr[6]),
-            # https://github.com/rmolina/asynch/blob/4d3e4bf281a184279147b408b1df24f2298df606/src/models/equations.c#L1814
         )
 
     def from_array(self, arr: NDArray[np.float64]):
@@ -61,23 +54,20 @@ class Model254States(ModelStates):
         self.s_p = arr[1]
         self.s_t = arr[2]
         self.s_s = arr[3]
-        self.s_precip = arr[4]
-        self.v_r = arr[5]
-        self.q_b = arr[6]
 
     def to_array(self) -> NDArray[np.float64]:
         """Convert the instance to an array."""
         return np.array(
-            [self.q, self.s_p, self.s_t, self.s_s, self.s_precip, self.v_r, self.q_b],
+            [self.q, self.s_p, self.s_t, self.s_s],
             dtype=np.float64,
         )
 
 
 @dataclass
-class Model254Parameters(
+class Model252Parameters(
     ModelParameters
 ):  # pylint:disable=too-many-instance-attributes
-    """Model254 global parameters."""
+    """Model252 global parameters."""
 
     v_0: float = 0.33  # m s-1
     lambda_1: float = 0.2
@@ -94,8 +84,8 @@ class Model254Parameters(
 
 
 @dataclass
-class Model254Forcings(ModelForcings):
-    """Model254 forcings."""
+class Model252Forcings(ModelForcings):
+    """Model252 forcings."""
 
     precipitation: pd.DataFrame = field(default_factory=pd.DataFrame)
     potential_evaporation: pd.DataFrame = field(default_factory=pd.DataFrame)
@@ -121,16 +111,16 @@ class StorageFluxes:
 
 
 @dataclass
-class Model254(HlmBmi):
-    """Model254 class."""
+class Model252(HlmBmi):
+    """Model252 class."""
 
-    parameters: Model254Parameters = field(default_factory=Model254Parameters)
-    forcings_data: Model254Forcings = field(default_factory=Model254Forcings)
-    initial_values: Model254States = field(default_factory=Model254States)
+    parameters: Model252Parameters = field(default_factory=Model252Parameters)
+    forcings_data: Model252Forcings = field(default_factory=Model252Forcings)
+    initial_values: Model252States = field(default_factory=Model252States)
 
     bmi_fields: BmiFields = field(
         default_factory=lambda: BmiFields(
-            component_name="HLM#254",
+            component_name="HLM#252",
             input_var_names=(
                 "atmosphere_water__precipitation_leq-volume_flux",
                 "land_surface_water__potential_evaporation_volume_flux",
@@ -144,18 +134,12 @@ class Model254(HlmBmi):
                 "water_ponded_on_hillslope_surface",
                 "effective_water_depth_in_the_top_soil_layer",
                 "effective_water_depth_in_hillslope_subsurface",
-                "total_precipitation_from_time_0_to_t",
-                "total_runoff_from_time_0_to_t",
-                "channel_discharge_from_baseflow",
             ),
             output_var_units=(
                 "m3 s-1",
                 "m",
                 "m",
                 "m",
-                "m",
-                "m",
-                "m3 s-1",
             ),
         )
     )
@@ -169,8 +153,8 @@ class Model254(HlmBmi):
     ) -> NDArray[np.float64]:
         """Compute the updated derivatives using dense solutions."""
 
-        node_param: Model254NodeParameters = self.network.nodes[node_id]["parameters"]
-        states = Model254States.init(y)
+        node_param: Model252NodeParameters = self.network.nodes[node_id]["parameters"]
+        states = Model252States.init(y)
         children_solutions = self.get_children_solutions(node_id, t)
 
         precipitation = self.get_input(self.forcings_data.precipitation, node_id, t)
@@ -193,50 +177,20 @@ class Model254(HlmBmi):
         topsoil = storage_fluxes.q_pt - storage_fluxes.q_ts - evaporation_fluxes.e_t
         subsurface = storage_fluxes.q_ts - storage_fluxes.q_sl - evaporation_fluxes.e_s
 
-        baseflow = self.get_baseflow(
-            node_param, states, children_solutions, storage_fluxes
-        )
-
         return np.array(
             [
                 discharge,
                 ponded,
                 topsoil,
                 subsurface,
-                precipitation,
-                storage_fluxes.q_pl,
-                baseflow,
             ]
         )
-
-    def get_baseflow(
-        self,
-        node_param: Model254NodeParameters,
-        states: Model254States,
-        children_solutions: list[tuple[NDArray[np.float64], float]],
-        storage_fluxes: StorageFluxes,
-    ):
-        """Get baseflow."""
-        model_param = self.parameters
-
-        base_flow = storage_fluxes.q_sl * node_param.a_h - states.q_b  # * 60.0
-
-        for child_states, _ in children_solutions:
-            child_states = Model254States.init(child_states)
-            baseflow_child = child_states.q_b
-
-            if baseflow_child < 0:
-                baseflow_child = 1e-6
-            base_flow += baseflow_child
-
-        base_flow *= model_param.v_b / node_param.l_i
-        return base_flow
 
     def get_evaporation_fluxes(
         self,
         t: float,
         node_id: int,
-        states: Model254States,
+        states: Model252States,
     ) -> EvaporationFluxes:
         """Get evaporation fluxes."""
 
@@ -269,8 +223,8 @@ class Model254(HlmBmi):
 
     def get_storage_fluxes(
         self,
-        states: Model254States,
-        node_param: Model254NodeParameters,
+        states: Model252States,
+        node_param: Model252NodeParameters,
     ) -> StorageFluxes:
         """Get fluxes between storages."""
 
@@ -293,8 +247,8 @@ class Model254(HlmBmi):
 
     def get_discharge(
         self,
-        states: Model254States,
-        node_param: Model254NodeParameters,
+        states: Model252States,
+        node_param: Model252NodeParameters,
         storage_fluxes: StorageFluxes,
         children_solutions: list[tuple[NDArray[np.float64], float]],
     ) -> float:
@@ -309,7 +263,7 @@ class Model254(HlmBmi):
         # children_solutions[child_id] = (child_ode_result, child_flow_partition)
 
         for child_states, child_flow_partition in children_solutions:
-            child_states_arr = Model254States.init(child_states)
+            child_states_arr = Model252States.init(child_states)
             discharge_child = child_states_arr.q * child_flow_partition
 
             if discharge_child < 0:
@@ -342,7 +296,7 @@ class Model254(HlmBmi):
 
             k_i = k_2 * model_parameters.k_i_factor  # [1/s]
 
-            self.network.nodes[node_id]["parameters"] = Model254NodeParameters(
+            self.network.nodes[node_id]["parameters"] = Model252NodeParameters(
                 a_i, l_i, a_h, invtau, k_2, k_i
             )
 
