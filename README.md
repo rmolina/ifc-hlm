@@ -6,3 +6,10 @@ Hillslope-Link Model (HLM) for hydrological simulation.
 
 ```bash
 pip install ifc-hlm
+```
+
+## Usage
+
+```python
+from ifc_hlm.models import Model252, Model254
+```
