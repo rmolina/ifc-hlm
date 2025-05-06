@@ -74,7 +74,9 @@ class Model254States(ModelStates):
 
 
 @dataclass
-class Model254Parameters(ModelParameters):  # pylint:disable=too-many-instance-attributes
+class Model254Parameters(
+    ModelParameters
+):  # pylint:disable=too-many-instance-attributes
     """Model254 global parameters."""
 
     v_0: float = 0.33  # m s-1
@@ -207,7 +209,13 @@ class Model254(HlmBmi):
             ]
         )
 
-    def get_baseflow(self, node_param, states, children_solutions, storage_fluxes):
+    def get_baseflow(
+        self,
+        node_param: Model254NodeParameters,
+        states: Model254States,
+        children_solutions: list[tuple[NDArray[np.float64], float]],
+        storage_fluxes: StorageFluxes,
+    ):
         """Get baseflow."""
         model_param = self.parameters
 
@@ -294,11 +302,9 @@ class Model254(HlmBmi):
 
         model_param = self.parameters
         # Discharge
-        discharge = (
-            -states.q  # m3/s
-            + node_param.a_h
-            * (storage_fluxes.q_pl + storage_fluxes.q_sl)  # m2*(m/s) == m3/s
-        )
+        discharge = -states.q + node_param.a_h * (  # m3/s
+            storage_fluxes.q_pl + storage_fluxes.q_sl
+        )  # m2*(m/s) == m3/s
 
         # children_solutions[child_id] = (child_ode_result, child_flow_partition)
 
