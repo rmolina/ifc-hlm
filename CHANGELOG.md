@@ -1,3 +1,7 @@
+## [v0.2.1] - 2025-05-06
+### Changed
+- Add basic README for PyPI compatibility.
+
 ## [v0.2.0] - 2025-05-06
 ### Added
 - New model: Model252.
