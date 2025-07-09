@@ -166,22 +166,27 @@ class Hlm(ABC):
 
         log.info("Loaded a %s", self.network)
 
-    def _load_network_parameters(self) -> None:
+    def load_network_parameters(self) -> None:
         """Add node parameters to a DAG from a *.prm file"""
-
         log.info("Network parameters file: %s", self.config["prm_file"])
+
+        # Initialize variables
+        lines = []
+        node_params = []
+        num_nodes = 0
 
         try:
             with open(self.config["prm_file"], "r", encoding="utf-8") as file:
                 lines = file.readlines()
         except (FileNotFoundError, PermissionError) as exc:
             log.critical(exc)
+            return  # Exit early if file can't be read
 
         try:
             num_nodes = int(lines[0].strip())
-
             if num_nodes != self.network.number_of_nodes():
                 log.critical("Number of nodes mismatch")
+                return  # Exit early on mismatch
 
             index = 1
             while index < len(lines):
@@ -197,6 +202,7 @@ class Hlm(ABC):
                     index += 1
         except (IndexError, ValueError) as exc:
             log.critical("Invalid file: %s", exc)
+            return  # Exit early on parsing error
 
         log.info(
             "Loaded %d parameters per node into %d nodes", len(node_params), num_nodes
