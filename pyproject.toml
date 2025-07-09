@@ -19,3 +19,13 @@ dependencies = [
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.16.1",
+    "pandas-stubs>=2.3.0.250703",
+    "scipy-stubs>=1.15.3.0",
+    "types-networkx>=3.5.0.20250701",
+    "types-pyyaml>=6.0.12.20250516",
+    "types-tqdm>=4.67.0.20250516",
+]
