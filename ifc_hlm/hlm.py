@@ -218,15 +218,15 @@ class Hlm(ABC):
                 "current_states"
             ] = self.initial_values.to_array()
 
-    def _initialize_time(self) -> None:
+    def initialize_time(self) -> None:
         """Load mandatory time fields and start the clock."""
-
         try:
             start_time: datetime = self.config["start_time"]
             end_time: datetime = self.config["end_time"]
-            _ = self.config["time_step"]
+            time_step = self.config["time_step"]
         except KeyError as exc:
             log.critical("Config file is missing a required key: %s", exc)
+            return  # Exit early if required keys are missing
 
         try:
             self.config["start_time"] = start_time.timestamp()
@@ -235,6 +235,7 @@ class Hlm(ABC):
             log.critical(
                 "Wrong value for 'start_time' (expected format: YYYY-MM-DD hh:mm:ss)"
             )
+            return  # Exit early on invalid start_time
 
         try:
             self.config["end_time"] = end_time.timestamp()
@@ -243,11 +244,13 @@ class Hlm(ABC):
             log.critical(
                 "Wrong value for 'end_time' (expected format: YYYY-MM-DD hh:mm:ss)"
             )
+            return  # Exit early on invalid end_time
 
         try:
             self.config["time_step"] = float(self.config["time_step"])
         except (TypeError, ValueError):
             log.critical("Wrong value for 'time_step' (expected type: float)")
+            return  # Exit early on invalid time_step
 
         self.current_time = self.config["start_time"]  # start the clock
 
