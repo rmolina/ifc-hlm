@@ -1,3 +1,22 @@
+## v0.3.0 - 2025-07-08
+
+### Breaking Changes
+- Renamed `init()` classmethod to `from_array()` in ModelStates classes
+
+### Added
+- Generic type parameters for type-safe model inheritance hierarchy
+- mypy static type checking with library stubs as dev dependencies
+
+### Fixed
+- Fixed unbound variables in `load_network_topology()`, `load_network_parameters()`, and `initialize_time()`
+- Fixed missing exception handling in `read_csv()` method
+
+### Development
+- Added comprehensive type checking infrastructure
+- Eliminated pylint type override warnings
+- Improved IDE experience with better type safety
+- Relaxed dependency version constraints
+
 ## [v0.2.1] - 2025-05-06
 ### Changed
 - Add basic README for PyPI compatibility.
