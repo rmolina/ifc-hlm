@@ -276,7 +276,6 @@ class Hlm(ABC):
 
     def _read_csv(self, forcing_csv) -> pd.DataFrame:
         """Get the forcing file name from the config."""
-
         # Read the CSV file into a DataFrame
         try:
             forcing_df = pd.read_csv(
@@ -288,6 +287,7 @@ class Hlm(ABC):
             raise
         except pd.errors.EmptyDataError:
             log.critical("Found no columns to parse in `%s`", forcing_csv)
+            raise  # Add this line!
 
         # Set the "time" column as index
         try:
