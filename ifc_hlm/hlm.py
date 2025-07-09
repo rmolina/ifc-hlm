@@ -4,7 +4,7 @@ import logging as log
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import ClassVar
+from typing import ClassVar, Generic, TypeVar
 
 import networkx as nx
 import numpy as np
@@ -13,6 +13,10 @@ import scipy.integrate as spi
 import yaml
 from numpy.typing import NDArray
 from tqdm.auto import tqdm
+
+P = TypeVar("P", bound="ModelParameters")
+F = TypeVar("F", bound="ModelForcings")
+S = TypeVar("S", bound="ModelStates")
 
 
 @dataclass
@@ -57,17 +61,14 @@ class ModelStates:
 
 
 @dataclass
-class Hlm(ABC):
+class Hlm(ABC, Generic[P, F, S]):
     """BaseModel class."""
 
+    parameters: P
+    forcings_data: F  # TODO: load into each node?
+    initial_values: S  # TODO: load into each node?
+
     config: dict = field(default_factory=dict)
-    parameters: ModelParameters = field(default_factory=ModelParameters)
-    forcings_data: ModelForcings = field(
-        default_factory=ModelForcings
-    )  # TODO: load into each node?
-    initial_values: ModelStates = field(
-        default_factory=ModelStates
-    )  # TODO: load into each node?
     current_forcings: np.ndarray = field(default_factory=lambda: np.array([]))
     current_states: np.ndarray = field(default_factory=lambda: np.array([]))
     network: nx.DiGraph = field(default_factory=nx.DiGraph)

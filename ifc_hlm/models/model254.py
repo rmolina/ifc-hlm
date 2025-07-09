@@ -101,7 +101,7 @@ class StorageFluxes:
 
 
 @dataclass
-class Model254(HlmBmi):
+class Model254(HlmBmi[Model254Parameters, Model254Forcings, Model254States]):
     """Model254 class."""
 
     parameters: Model254Parameters = field(default_factory=Model254Parameters)

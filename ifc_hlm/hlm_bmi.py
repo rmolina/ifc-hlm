@@ -1,12 +1,13 @@
 """Adds BMI functions to the base Hlm class."""
 
 from dataclasses import dataclass, field
+from typing import Generic, TypeVar
 
 import numpy as np
 from bmipy import Bmi
 from numpy.typing import NDArray
 
-from .hlm import Hlm
+from .hlm import F, Hlm, P, S
 
 
 @dataclass
@@ -21,7 +22,9 @@ class BmiFields:
 
 
 @dataclass
-class HlmBmi(Hlm, Bmi):  # pylint: disable=too-many-public-methods
+class HlmBmi(
+    Hlm[P, F, S], Bmi, Generic[P, F, S]
+):  # pylint: disable=too-many-public-methods
     """Extend the Hlm base class to make it BMI-compliant."""
 
     bmi_fields: BmiFields = field(default_factory=BmiFields)
