@@ -142,13 +142,18 @@ class Hlm(ABC):
                 break
             node_id = int(lines[index].strip())
             index += 1
+
+            children = []  # Initialize children as empty list
+
             if index < len(lines) and lines[index].strip() != "":
                 node_info = lines[index].strip().split()
                 num_children = int(node_info[0])
                 children = list(map(int, node_info[1 : num_children + 1]))
                 assert num_children == len(children)
                 index += 1
+
             self.network.add_node(node_id)
+
             for child_id in children:
                 self.network.add_edge(node_id, child_id)
 
