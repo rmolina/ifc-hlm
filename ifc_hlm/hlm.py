@@ -166,7 +166,7 @@ class Hlm(ABC):
 
         log.info("Loaded a %s", self.network)
 
-    def load_network_parameters(self) -> None:
+    def _load_network_parameters(self) -> None:
         """Add node parameters to a DAG from a *.prm file"""
         log.info("Network parameters file: %s", self.config["prm_file"])
 
@@ -218,7 +218,7 @@ class Hlm(ABC):
                 "current_states"
             ] = self.initial_values.to_array()
 
-    def initialize_time(self) -> None:
+    def _initialize_time(self) -> None:
         """Load mandatory time fields and start the clock."""
         try:
             start_time: datetime = self.config["start_time"]
