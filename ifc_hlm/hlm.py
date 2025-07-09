@@ -4,6 +4,7 @@ import logging as log
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import ClassVar
 
 import networkx as nx
 import numpy as np
@@ -33,18 +34,26 @@ class ModelForcings:
 class ModelStates:
     """Base class for model states."""
 
+    fields: ClassVar[tuple] = ()
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if not cls.fields:
+            raise NotImplementedError(f"{cls.__name__} must define 'fields' ClassVar")
+
     @classmethod
-    @abstractmethod
-    def init(cls, arr: NDArray[np.float64]):
-        """Init an instance from an array."""
+    def from_array(cls, arr: NDArray[np.float64]):
+        """Create an instance from an array."""
+        instance = cls()
+        for i, field in enumerate(cls.fields):
+            setattr(instance, field, arr[i])
+        return instance
 
-    @abstractmethod
-    def from_array(self, arr: NDArray[np.float64]):
-        """Update an instance from an array."""
-
-    @abstractmethod
     def to_array(self) -> NDArray[np.float64]:
         """Convert the instance to an array."""
+        return np.array(
+            [getattr(self, field) for field in self.fields], dtype=np.float64
+        )
 
 
 @dataclass

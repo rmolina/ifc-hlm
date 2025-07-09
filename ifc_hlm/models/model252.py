@@ -1,6 +1,7 @@
 """Model252 module."""
 
 from dataclasses import dataclass, field
+from typing import ClassVar
 
 import numpy as np
 import pandas as pd
@@ -33,34 +34,12 @@ class Model252NodeParameters(NodeParameters):
 class Model252States(ModelStates):
     """Model252 states."""
 
+    fields: ClassVar[tuple] = ("q", "s_p", "s_t", "s_s")
+
     q: float = 1.0e-6  # Channel discharge [m**3 s**-1]
     s_p: float = 0.0  # Water ponded on hillslope surface [m]
     s_t: float = 0.0  # Effective water depth in the top soil layer [m]
     s_s: float = 0.0  # Effective water depth in hillslope subsurface [m]
-
-    @classmethod
-    def init(cls, arr: NDArray[np.float64]):
-        """Init an instance from an array."""
-        return cls(
-            q=arr[0],
-            s_p=arr[1],
-            s_t=arr[2],
-            s_s=arr[3],
-        )
-
-    def from_array(self, arr: NDArray[np.float64]):
-        """Update an instance from an array."""
-        self.q = arr[0]
-        self.s_p = arr[1]
-        self.s_t = arr[2]
-        self.s_s = arr[3]
-
-    def to_array(self) -> NDArray[np.float64]:
-        """Convert the instance to an array."""
-        return np.array(
-            [self.q, self.s_p, self.s_t, self.s_s],
-            dtype=np.float64,
-        )
 
 
 @dataclass
@@ -154,7 +133,7 @@ class Model252(HlmBmi):
         """Compute the updated derivatives using dense solutions."""
 
         node_param: Model252NodeParameters = self.network.nodes[node_id]["parameters"]
-        states = Model252States.init(y)
+        states = Model252States.from_array(y)
         children_solutions = self.get_children_solutions(node_id, t)
 
         precipitation = self.get_input(self.forcings_data.precipitation, node_id, t)
@@ -263,7 +242,7 @@ class Model252(HlmBmi):
         # children_solutions[child_id] = (child_ode_result, child_flow_partition)
 
         for child_states, child_flow_partition in children_solutions:
-            child_states_arr = Model252States.init(child_states)
+            child_states_arr = Model252States.from_array(child_states)
             discharge_child = child_states_arr.q * child_flow_partition
 
             if discharge_child < 0:

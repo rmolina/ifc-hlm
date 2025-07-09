@@ -1,6 +1,7 @@
 """Model254 module."""
 
 from dataclasses import dataclass, field
+from typing import ClassVar
 
 import numpy as np
 import pandas as pd
@@ -33,6 +34,8 @@ class Model254NodeParameters(NodeParameters):
 class Model254States(ModelStates):
     """Model254 states."""
 
+    fields: ClassVar[tuple] = ("q", "s_p", "s_t", "s_s", "s_precip", "v_r", "q_b")
+
     q: float = 1.0e-6  # Channel discharge [m**3 s**-1]
     s_p: float = 0.0  # Water ponded on hillslope surface [m]
     s_t: float = 0.0  # Effective water depth in the top soil layer [m]
@@ -42,35 +45,12 @@ class Model254States(ModelStates):
     q_b: float = 1.0e-6  # Channel discharge from baseflow [m**3 s**-1]
 
     @classmethod
-    def init(cls, arr: NDArray[np.float64]):
+    def from_array(cls, arr: NDArray[np.float64]):
         """Init an instance from an array."""
-        return cls(
-            q=arr[0],
-            s_p=arr[1],
-            s_t=arr[2],
-            s_s=arr[3],
-            s_precip=arr[4],
-            v_r=arr[5],
-            q_b=max(0.001, arr[6]),
-            # https://github.com/rmolina/asynch/blob/4d3e4bf281a184279147b408b1df24f2298df606/src/models/equations.c#L1814
-        )
-
-    def from_array(self, arr: NDArray[np.float64]):
-        """Update an instance from an array."""
-        self.q = arr[0]
-        self.s_p = arr[1]
-        self.s_t = arr[2]
-        self.s_s = arr[3]
-        self.s_precip = arr[4]
-        self.v_r = arr[5]
-        self.q_b = arr[6]
-
-    def to_array(self) -> NDArray[np.float64]:
-        """Convert the instance to an array."""
-        return np.array(
-            [self.q, self.s_p, self.s_t, self.s_s, self.s_precip, self.v_r, self.q_b],
-            dtype=np.float64,
-        )
+        instance = super().from_array(arr)
+        # Apply the special constraint for q_b
+        instance.q_b = max(0.001, instance.q_b)
+        return instance
 
 
 @dataclass
@@ -170,7 +150,7 @@ class Model254(HlmBmi):
         """Compute the updated derivatives using dense solutions."""
 
         node_param: Model254NodeParameters = self.network.nodes[node_id]["parameters"]
-        states = Model254States.init(y)
+        states = Model254States.from_array(y)
         children_solutions = self.get_children_solutions(node_id, t)
 
         precipitation = self.get_input(self.forcings_data.precipitation, node_id, t)
@@ -222,7 +202,7 @@ class Model254(HlmBmi):
         base_flow = storage_fluxes.q_sl * node_param.a_h - states.q_b  # * 60.0
 
         for child_states, _ in children_solutions:
-            child_states = Model254States.init(child_states)
+            child_states = Model254States.from_array(child_states)
             baseflow_child = child_states.q_b
 
             if baseflow_child < 0:
@@ -309,7 +289,7 @@ class Model254(HlmBmi):
         # children_solutions[child_id] = (child_ode_result, child_flow_partition)
 
         for child_states, child_flow_partition in children_solutions:
-            child_states_arr = Model254States.init(child_states)
+            child_states_arr = Model254States.from_array(child_states)
             discharge_child = child_states_arr.q * child_flow_partition
 
             if discharge_child < 0:
