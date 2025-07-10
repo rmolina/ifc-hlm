@@ -1,7 +1,7 @@
 """Adds BMI functions to the base Hlm class."""
 
 from dataclasses import dataclass, field
-from typing import Generic, TypeVar
+from typing import Generic
 
 import numpy as np
 from bmipy import Bmi
@@ -14,11 +14,24 @@ from .hlm import F, Hlm, P, S
 class BmiFields:
     """Required fields for every BMI-compliant model."""
 
-    component_name: str = field(default_factory=str)
-    input_var_names: tuple[str, ...] = field(default_factory=tuple)
-    input_var_units: tuple[str, ...] = field(default_factory=tuple)
-    output_var_names: tuple[str, ...] = field(default_factory=tuple)
-    output_var_units: tuple[str, ...] = field(default_factory=tuple)
+    component_name: str = ""
+    input_var_names: tuple[str, ...] = ()
+    input_var_units: tuple[str, ...] = ()
+    output_var_names: tuple[str, ...] = ()
+    output_var_units: tuple[str, ...] = ()
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if not cls.component_name:
+            raise NotImplementedError(f"{cls.__name__} must define 'component_name'")
+        if not cls.input_var_names:
+            raise NotImplementedError(f"{cls.__name__} must define 'input_var_names'")
+        if not cls.input_var_units:
+            raise NotImplementedError(f"{cls.__name__} must define 'input_var_units'")
+        if not cls.output_var_names:
+            raise NotImplementedError(f"{cls.__name__} must define 'output_var_names'")
+        if not cls.output_var_units:
+            raise NotImplementedError(f"{cls.__name__} must define 'output_var_units'")
 
 
 @dataclass
