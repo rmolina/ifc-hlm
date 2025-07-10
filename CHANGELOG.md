@@ -1,3 +1,10 @@
+## v0.4.1 - 2025-07-09
+
+### Fixed
+- Replace Model252BmiFields and Model254BmiFields classes with factory functions
+- Resolves dataclass inheritance issues with field defaults
+- Maintains validation while ensuring proper instantiation
+
 ## v0.4.0 - 2025-07-09
 
 ### Added
