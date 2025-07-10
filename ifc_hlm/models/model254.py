@@ -73,33 +73,35 @@ class Model254Parameters(
     v_b: float = 0.75  # m s-1
 
 
-class Model254BmiFields(BmiFields):
-    component_name = "HLM#254"
-    input_var_names = (
-        "atmosphere_water__precipitation_leq-volume_flux",
-        "land_surface_water__potential_evaporation_volume_flux",
-    )
-    input_var_units = (
-        "m s-1",
-        "m s-1",
-    )
-    output_var_names = (
-        "channel_discharge",
-        "water_ponded_on_hillslope_surface",
-        "effective_water_depth_in_the_top_soil_layer",
-        "effective_water_depth_in_hillslope_subsurface",
-        "total_precipitation_from_time_0_to_t",
-        "total_runoff_from_time_0_to_t",
-        "channel_discharge_from_baseflow",
-    )
-    output_var_units = (
-        "m3 s-1",
-        "m",
-        "m",
-        "m",
-        "m",
-        "m",
-        "m3 s-1",
+def create_model254_bmi_fields():
+    return BmiFields(
+        component_name="HLM#254",
+        input_var_names=(
+            "atmosphere_water__precipitation_leq-volume_flux",
+            "land_surface_water__potential_evaporation_volume_flux",
+        ),
+        input_var_units=(
+            "m s-1",
+            "m s-1",
+        ),
+        output_var_names=(
+            "channel_discharge",
+            "water_ponded_on_hillslope_surface",
+            "effective_water_depth_in_the_top_soil_layer",
+            "effective_water_depth_in_hillslope_subsurface",
+            "total_precipitation_from_time_0_to_t",
+            "total_runoff_from_time_0_to_t",
+            "channel_discharge_from_baseflow",
+        ),
+        output_var_units=(
+            "m3 s-1",
+            "m",
+            "m",
+            "m",
+            "m",
+            "m",
+            "m3 s-1",
+        ),
     )
 
 
@@ -138,7 +140,7 @@ class Model254(HlmBmi[Model254Parameters, Model254Forcings, Model254States]):
     forcings_data: Model254Forcings = field(default_factory=Model254Forcings)
     initial_values: Model254States = field(default_factory=Model254States)
 
-    bmi_fields: BmiFields = field(default_factory=Model254BmiFields)
+    bmi_fields: BmiFields = field(default_factory=create_model254_bmi_fields)
 
     def equations(
         self,

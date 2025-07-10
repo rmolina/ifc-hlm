@@ -62,28 +62,29 @@ class Model252Parameters(
     v_b: float = 0.75  # m s-1
 
 
-@dataclass
-class Model252BmiFields(BmiFields):
-    component_name = "HLM#252"
-    input_var_names = (
-        "atmosphere_water__precipitation_leq-volume_flux",
-        "land_surface_water__potential_evaporation_volume_flux",
-    )
-    input_var_units = (
-        "m s-1",
-        "m s-1",
-    )
-    output_var_names = (
-        "channel_discharge",
-        "water_ponded_on_hillslope_surface",
-        "effective_water_depth_in_the_top_soil_layer",
-        "effective_water_depth_in_hillslope_subsurface",
-    )
-    output_var_units = (
-        "m3 s-1",
-        "m",
-        "m",
-        "m",
+def create_model252_bmi_fields():
+    return BmiFields(
+        component_name="HLM#252",
+        input_var_names=(
+            "atmosphere_water__precipitation_leq-volume_flux",
+            "land_surface_water__potential_evaporation_volume_flux",
+        ),
+        input_var_units=(
+            "m s-1",
+            "m s-1",
+        ),
+        output_var_names=(
+            "channel_discharge",
+            "water_ponded_on_hillslope_surface",
+            "effective_water_depth_in_the_top_soil_layer",
+            "effective_water_depth_in_hillslope_subsurface",
+        ),
+        output_var_units=(
+            "m3 s-1",
+            "m",
+            "m",
+            "m",
+        ),
     )
 
 
@@ -122,7 +123,7 @@ class Model252(HlmBmi[Model252Parameters, Model252Forcings, Model252States]):
     forcings_data: Model252Forcings = field(default_factory=Model252Forcings)
     initial_values: Model252States = field(default_factory=Model252States)
 
-    bmi_fields: BmiFields = field(default_factory=Model252BmiFields)
+    bmi_fields: BmiFields = field(default_factory=create_model252_bmi_fields)
 
     def equations(
         self,
