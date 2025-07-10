@@ -2,7 +2,7 @@
 
  A Python version of the Iowa Flood Center’s (IFC’s) Hillslope-Link Model (HLM) implementing the Basic Model Interface (BMI).
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15351387.svg)](https://doi.org/10.5281/zenodo.15351387)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15025535.svg)](https://doi.org/10.5281/zenodo.15025535)
  
 ## Installation
 
