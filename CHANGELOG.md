@@ -1,3 +1,15 @@
+## v0.4.0 - 2025-07-09
+
+### Added
+- Replace field factories with simple defaults in BmiFields base class
+- Add __init_subclass__ validation to ensure required fields are defined
+- Create dedicated Model252BmiFields and Model254BmiFields classes
+- Simplify model class definitions by using dedicated BMI field classes
+- Remove unused TypeVar import
+
+### Fixed
+- Update DOI to represent all versions
+
 ## v0.3.0 - 2025-07-08
 
 ### Breaking Changes
