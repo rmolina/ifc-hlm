@@ -68,7 +68,7 @@ This formulation includes:
 ## Equations
 In the formulation equations $L$ is the length of the channel, $A_h$ is the area of the hillslope. $s_p$ is the water stored in the ponds, $s_t$ is the water stored in the top layer of soil. $s_s$ is the water stored in the soil subsurface. $q$ is the discharge in the channel. 
 
-**Surface Soil:**
+**Surface Soil**
 $$
 \frac{ds_p}{dt}=p-q_{pc}-q_{pt}-e_p
 $$
@@ -81,7 +81,7 @@ $q_{pc}$ is the flux of water ponded on the surface to the channel and is define
 
 $e_p$ is the evapotranspiration in the surface of soil
 
-**Top soil layer:**
+**Top soil layer**
 $$
 \frac{ds_t}{dt}=q_{pt}-q_{ts}-e_t
 $$
@@ -90,7 +90,7 @@ $q_{ts}$ is the flux of water from the top layer storage to the subsurface is de
 $e_t$ is the evapotranspiration in the top layer of soil
 
 
-**Subsurface layer:**
+**Subsurface layer**
    
 $$
 \frac{ds_s}{dt}=q_{ts}-q_{sc}-e_s
@@ -98,7 +98,7 @@ $$
 
  $q_{sc}$ is the flux of water from the subsurface to the channel is defined by $q_{sc} = k_3\,s_s$   
 
-**Nonlinear channel routing:**
+**Nonlinear channel routing**
 
 The mass transport equation for each channel link in the network is given by
 $$
