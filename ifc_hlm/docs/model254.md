@@ -12,20 +12,20 @@ This model extends the baseline HLM by incorporating:
 - **Nonlinear routing:** Channel and hillslope fluxes are modeled with nonlinear storage–discharge relationships.  
 - **Variable infiltration:** Infiltration capacity varies dynamically with soil saturation, storm intensity, and hillslope properties.  
 
-This formulation provides a more physically realistic representation of runoff generation and streamflow hydrographs, especially for events with high rainfall intensity, steep slopes, or tile drainage influence.
+This formulation provides a representation of runoff generation and streamflow hydrographs routing, especially for events with high rainfall intensity.
 
 ---
 
 ## 3. Inputs
 
-- **Climate forcings (mm/hour):**
-  - **Precipitation** – rainfall rate applied to each hillslope.  
-  - **Evapotranspiration** – evapotranspiration rate reducing soil storage.  
+- **Forcings :**
+  - **Precipitation** – rainfall rate applied to each hillslope, in mm/hour  
+  - **Evapotranspiration** – evapotranspiration rate, in mm/month.  
 
 - **Hillslope / channel properties:**
-  - **Hillslope area (km²)** – contributing surface area draining into the channel.  
-  - **Channel accumulated drainage area (km²)** – total upstream area contributing to a channel link.  
-  - **Channel length (km)** – physical length of the channel link.  
+  - **Hillslope area** – contributing surface area draining into the channel, in square kilometers.
+  - **Channel accumulated drainage area** – total upstream area contributing to a channel link, in square kilometers.  
+  - **Channel length** – physical length of the channel link, in kilometers.  
 
 - **Initial conditions:**
   - Soil moisture storage per hillslope (mm).  
@@ -90,7 +90,7 @@ $$
  
  The definitions of the terms $k_2$, $k_t$, $k_i$, and $k_3$ controlling the flux among storages, as well as the terms $e_p$, $e_t$, and $e_s$ controlling evapotranspiration, are shown below in appendix.   
 
-4. **Nonlinear channel routing:**
+**Nonlinear channel routing:**
 The mass transport equation for each channel link in the network is given by
 $$
    \frac{dq}{dt} =L\,\frac{v_{r}}{1-\lambda_1}\,\frac{q}{q_r}^{\lambda_1}\frac{A}{A_r}^{\lambda_2}\,[-q+q_{pc}+q_{sc}\frac{A_h}{60}+q_{in}] 
@@ -104,7 +104,7 @@ The parameters controlling the flux among storages are given by
 
 $k_2=v_h(L/A_h) ×10^{-3}[1/min]$
 
-$k3=v_g(L/A_h)×10^{-3}[1/min]$
+$k_3=v_g(L/A_h)×10^{-3}[1/min]$
 
 $k_i=k_2\beta$
 
@@ -128,13 +128,14 @@ $e_s=e_{pot}(s_s/(h_b-s_L))/c$
 -  exponent of channel velocity discharge $\lambda_1=0.3$  (dimensionless)
 -  exponent of channel velocity area $\lambda_2=-0.1$  (dimensionless)
 
-- reference area $Ar=1$ square kilometers
-- reference discharge $q_r=1$ m3/s
-- velocity of water on the hillslope surface
-- infiltration from subsurface to channel
-- percentage of infiltration from top soil to subsurface β=0.005 (dimensionless),
-- total hillslope depth  ,
-- total topsoil depth SL = 0.1m,
+- reference area $Ar=1km^2$
+- reference discharge $q_r=1m^3/s$ 
+- velocity of water on the hillslope surface $v_h=0.1m/s$
+- infiltration from subsurface to channel $k_3=2.3\times10^{-5}(1/min)$
+- $\beta=0.05$ dimensionless
+- factor of infiltration from top soil to subsurface $k_i=0.02$ (dimensionless),
+- total hillslope depth $h_b=0.5m$
+- total topsoil depth $S_L = 0.1m$
 - surface to topsoil infiltration additive factor A=0 (dimensionless)
 - surface to topsoil infiltration multiplicative factor B=99 (dimensionless),
 - surface to topsoil infiltration exponent factor $\alpha=3$ (dimensionless).
