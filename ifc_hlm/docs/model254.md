@@ -1,12 +1,17 @@
-# `model254.py` – Nonlinear Routing and Variable Infiltration Hillslope-Link Model
+# `model254.py` 
 
-## 1. Name
+## Description
 **`model254.py`**  
 Implements the **Nonlinear Routing and Variable Infiltration version of the Hillslope-Link Model (HLM)** as developed at the Iowa Flood Center (IFC).
+- This model is a baseline model with simplified processes
+- This model uses precipitation and evapotranspiration forcings
+- This model does not include snow processes
+- This model does not include tile drainage processes
+- This model includes routing across the river network created by the hillslopes
 
 ---
 
-## 2. Purpose / Use Case
+## Purpose / Use Case
 This model extends the baseline HLM by incorporating:
 
 - **Nonlinear routing:** Channel and hillslope fluxes are modeled with nonlinear storage–discharge relationships.  
@@ -16,7 +21,7 @@ This formulation provides a representation of runoff generation and streamflow h
 
 ---
 
-## 3. Inputs
+## Inputs
 
 - **Forcings :**
   - **Precipitation** – rainfall rate applied to each hillslope, in mm/hour  
@@ -28,14 +33,31 @@ This formulation provides a representation of runoff generation and streamflow h
   - **Channel length** – physical length of the channel link, in kilometers.  
 
 - **Initial conditions:**
-  - Soil moisture storage per hillslope (mm).  
-  - Baseflow / groundwater storage (mm or m³/s equivalent).  
-  - Channel storage states (m³ or equivalent depth).  
+  - Discharge in the channel [m3/s]  
+  - Water ponded in the surface [m]
+  - Water stored in the upper layer of soil [m]
+  - Water stored in the bottom layer of soil [m]  
+  
 
-- **Configuration parameters:**
-  - Nonlinear exponents and coefficients for hillslope and channel routing.  
-  - Infiltration scaling parameters.  
-  - Time step Δt (hours by default).  
+**Parameter and default values**
+
+- channel reference velocity $v_r=0.3\,m/s$
+-  exponent of channel velocity discharge $\lambda_1=0.3$  (dimensionless)
+-  exponent of channel velocity area $\lambda_2=-0.1$  (dimensionless)
+- velocity of water on the hillslope surface $v_h=0.1m/s$
+- infiltration from subsurface to channel $k_3=2.3\times10^{-5}(1/min)$
+- factor of infiltration from top soil to subsurface $k_i=0.02$ (dimensionless),
+- total hillslope depth $h_b=0.5m$
+- total topsoil depth $S_L = 0.1m$
+- surface to topsoil infiltration additive factor A=0 (dimensionless)
+- surface to topsoil infiltration multiplicative factor B=99 (dimensionless),
+- surface to topsoil infiltration exponent factor $\alpha=3$ (dimensionless)
+
+Other parameters used internally in the model are
+- reference area $Ar=1km^2$
+- reference discharge $q_r=1m^3/s$ 
+- $\beta=0.05$ dimensionless
+  
 
 ---
 
@@ -122,23 +144,6 @@ $e_t=e_{pot}(s_t/s_L)/c$
 $e_s=e_{pot}(s_s/(h_b-s_L))/c$
 
 
-**Default parameter values**
-
-- channel reference velocity $v_r=0.3\,m/s$
--  exponent of channel velocity discharge $\lambda_1=0.3$  (dimensionless)
--  exponent of channel velocity area $\lambda_2=-0.1$  (dimensionless)
-
-- reference area $Ar=1km^2$
-- reference discharge $q_r=1m^3/s$ 
-- velocity of water on the hillslope surface $v_h=0.1m/s$
-- infiltration from subsurface to channel $k_3=2.3\times10^{-5}(1/min)$
-- $\beta=0.05$ dimensionless
-- factor of infiltration from top soil to subsurface $k_i=0.02$ (dimensionless),
-- total hillslope depth $h_b=0.5m$
-- total topsoil depth $S_L = 0.1m$
-- surface to topsoil infiltration additive factor A=0 (dimensionless)
-- surface to topsoil infiltration multiplicative factor B=99 (dimensionless),
-- surface to topsoil infiltration exponent factor $\alpha=3$ (dimensionless).
 
 ---
 
