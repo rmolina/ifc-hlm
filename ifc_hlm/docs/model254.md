@@ -36,48 +36,47 @@ This formulation provides a representation of runoff generation and streamflow h
   - Discharge in the channel [m3/s]  
   - Water ponded in the surface [m]
   - Water stored in the upper layer of soil [m]
-  - Water stored in the bottom layer of soil [m]  
+  - Water stored in the bottom layer of soil [m] 
+  - Accumulated precipitation [m]
+  - Accumulated runoff [m]
+  - Baseflow [m3/s]
   
 
-**Parameter and default values**
+- **Parameter and default values**
 
-- channel reference velocity $v_r=0.3\,m/s$
--  exponent of channel velocity discharge $\lambda_1=0.3$  (dimensionless)
--  exponent of channel velocity area $\lambda_2=-0.1$  (dimensionless)
-- velocity of water on the hillslope surface $v_h=0.1m/s$
-- infiltration from subsurface to channel $k_3=2.3\times10^{-5}(1/min)$
-- factor of infiltration from top soil to subsurface $k_i=0.02$ (dimensionless),
-- total hillslope depth $h_b=0.5m$
-- total topsoil depth $S_L = 0.1m$
-- surface to topsoil infiltration additive factor A=0 (dimensionless)
-- surface to topsoil infiltration multiplicative factor B=99 (dimensionless),
-- surface to topsoil infiltration exponent factor $\alpha=3$ (dimensionless)
+    - channel reference velocity $v_r=0.3\,m/s$
+    -  exponent of channel velocity discharge $\lambda_1=0.3$  (dimensionless)
+    -  exponent of channel velocity area $\lambda_2=-0.1$  (dimensionless)
+    - velocity of water on the hillslope surface $v_h=0.1m/s$
+    - infiltration from subsurface to channel $k_3=2.3\times10^{-5}(1/min)$
+    - factor of infiltration from top soil to subsurface $k_i=0.02$ (dimensionless),
+    - total hillslope depth $h_b=0.5m$
+    - total topsoil depth $S_L = 0.1m$
+    - surface to topsoil infiltration additive factor A=0 (dimensionless)
+    - surface to topsoil infiltration multiplicative factor B=99 (dimensionless),
+    - surface to topsoil infiltration exponent factor $\alpha=3$ (dimensionless)
 
-Other parameters used internally in the model are
-- reference area $Ar=1km^2$
-- reference discharge $q_r=1m^3/s$ 
-- $\beta=0.05$ dimensionless
+    Other parameters used internally in the model are
+    - reference area $Ar=1km^2$
+    - reference discharge $q_r=1m^3/s$ 
+    - $\beta=0.05$ dimensionless
   
 
 ---
 
-## 4. Outputs
+## Outputs
 
-- **Hydrographs:** Streamflow at the outlet and at internal channel links.  
-- **Hydrologic states:**
-  - Soil moisture  
-  - Channel storage  
-  - Baseflow contributions  
-- **Fluxes:**
-  - Infiltration  
-  - Evapotranspiration losses  
-  - Overland flow  
-  - Subsurface/tile drainage  
-  - Routed channel discharge  
+- Discharge in the channel [m3/s]  
+- Water ponded in the surface [m]
+- Water stored in the upper layer of soil [m]
+- Water stored in the bottom layer of soil [m] 
+- Accumulated precipitation [m]
+- Accumulated runoff [m]
+- Baseflow [m3/s]
 
 ---
 
-## 5. Governing Equations
+## Governing Equations
 
 **Surface Soil:**
 $$
@@ -86,7 +85,7 @@ $$
 $p$ is the precipitation in the hillslope
 
 
-$q_{pc}$ is the flux of water ponded on the surface to the channel and is defined by $q_pc = k_2s_p$.
+$q_{pc}$ is the flux of water ponded on the surface to the channel and is defined by $q_pc = k_2s_p$
 
  $q_{pt}$ is the flux of water ponded on the surface to the top layer storage and is defined by $qpt = k_t\,s_p$
 
@@ -113,9 +112,10 @@ $$
  The definitions of the terms $k_2$, $k_t$, $k_i$, and $k_3$ controlling the flux among storages, as well as the terms $e_p$, $e_t$, and $e_s$ controlling evapotranspiration, are shown below in appendix.   
 
 **Nonlinear channel routing:**
+
 The mass transport equation for each channel link in the network is given by
 $$
-   \frac{dq}{dt} =L\,\frac{v_{r}}{1-\lambda_1}\,\frac{q}{q_r}^{\lambda_1}\frac{A}{A_r}^{\lambda_2}\,[-q+q_{pc}+q_{sc}\frac{A_h}{60}+q_{in}] 
+   \frac{dq}{dt} =L\,\frac{v_{r}}{1-\lambda_1}\,\frac{q}{q_r}^{\lambda_1}\frac{A}{A_r}^{\lambda_2}\,[-q+(q_{pc}+q_{sc})\frac{A_h}{60}+q_{in}] 
 $$
 
  
@@ -147,7 +147,7 @@ $e_s=e_{pot}(s_s/(h_b-s_L))/c$
 
 ---
 
-## 6. Dependencies
+## Dependencies
 
 - Python ≥3.8  
 - `numpy`  
@@ -156,7 +156,7 @@ $e_s=e_{pot}(s_s/(h_b-s_L))/c$
 
 ---
 
-## 7. Example Usage
+## Example Usage
 
 ```python
 from ifc_hlm.models import model254
