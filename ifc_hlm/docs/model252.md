@@ -1,8 +1,9 @@
-# `model254.py` 
+# `model252.py` 
 
 ## Description
-**`model254.py`**  
-Implements the **Nonlinear Routing and Variable Infiltration version of the Hillslope-Link Model (HLM)** as developed at the Iowa Flood Center (IFC).
+**`model252.py`**  
+Simplified version of `model254.py`
+- Compared to `model254.py` , this formulation do not calculate accumulated precipitation, accumulated runoff or baseflow
 - This formulation is a baseline model with fewer processes included
 - This formulation uses two forcings: precipitation and evapotranspiration
 - This model does not include snow processes
@@ -31,11 +32,7 @@ This formulation includes:
   - Discharge in the channel [m3/s]  
   - Water ponded in the surface [m]
   - Water stored in the upper layer of soil [m]
-  - Water stored in the bottom layer of soil [m] 
-  - Accumulated precipitation [m]
-  - Accumulated runoff [m]
-  - Baseflow [m3/s]
-  
+  - Water stored in the bottom layer of soil [m]   
 
 - **Parameter and default values**
 
@@ -65,9 +62,6 @@ This formulation includes:
 - Water ponded in the surface [m]
 - Water stored in the upper layer of soil [m]
 - Water stored in the bottom layer of soil [m] 
-- Accumulated precipitation [m]
-- Accumulated runoff [m]
-- Baseflow [m3/s]
 
 ---
 
@@ -141,7 +135,7 @@ $e_s=e_{pot}(s_s/(h_b-s_L))/c$
 ## Example Usage
 
 ```python
-from ifc_hlm.models import model254
+from ifc_hlm.models import model252
 
 # Define parameters (see lines 62–73 for parameter set)
 params = {
@@ -154,7 +148,7 @@ params = {
 }
 
 # Initialize model
-hlm = model254.HLMModel(params)
+hlm = model252.HLMModel(params)
 
 # Forcings in mm/hour
 precip = [2.5, 5.0, 0.0, ...]   # precipitation time series
