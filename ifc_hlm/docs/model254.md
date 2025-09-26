@@ -57,23 +57,38 @@ This formulation provides a more physically realistic representation of runoff g
 
 ## 5. Governing Equations
 
-1. **Surface Soil:**
+**Surface Soil:**
 $$
 \frac{ds_p}{dt}=p-q_{pc}-q_{pt}-e_p
 $$
-   
+$p$ is the precipitation in the hillslope
 
-2. **Top soil later:**
+
+$q_{pc}$ is the flux of water ponded on the surface to the channel and is defined by $q_pc = k_2s_p$.
+
+ $q_{pt}$ is the flux of water ponded on the surface to the top layer storage and is defined by $qpt = k_t\,s_p$
+
+
+$e_p$ is the evapotranspiration in the surface of soil
+
+**Top soil layer:**
 $$
 \frac{ds_t}{dt}=q_{pt}-q_{ts}-e_t
 $$
+$q_{ts}$ is the flux of water from the top layer storage to the subsurface is defined by $q_{ts} = k_is_t$
 
-3. **Subsurface layer:**
+$e_t$ is the evapotranspiration in the top layer of soil
+
+
+**Subsurface layer:**
    
 $$
 \frac{ds_s}{dt}=q_{ts}-q_{sc}-e_s
 $$
-   
+
+ $q_{sc}$ is the flux of water from the subsurface to the channel is defined by $q_{sc} = k_3s_s$
+ 
+ The definitions of the terms $k_2$, $k_t$, $k_i$, and $k_3$ controlling the flux among storages, as well as the terms $e_p$, $e_t$, and $e_s$ controlling evapotranspiration, are shown below in appendix.   
 
 4. **Nonlinear channel routing:**
 The mass transport equation for each channel link in the network is given by
@@ -82,12 +97,48 @@ $$
 $$
 
  
-   where \(P\) is precipitation rate (mm/h), \(I\) infiltration, and \(ET\) evapotranspiration. 
-5. **Appendix**
-The parameters controlling the flux among storages are given by
-$$
+  
+**Appendix**
 
-$$
+The parameters controlling the flux among storages are given by
+
+$k_2=v_h(L/A_h) ×10^{-3}[1/min]$
+
+$k3=v_g(L/A_h)×10^{-3}[1/min]$
+
+$k_i=k_2\beta$
+
+$k_t=k_2 [A+B(1-s_t/s_L )^\alpha ][1/min]$
+
+
+Fluxes representing evaporation are given by:
+
+$c =(s_p/s_r)+(s_t/s_L)+(s_s/(h_b-s_L))$
+
+$e_p=e_{pot}(s_p/s_r)/c$
+
+$e_t=e_{pot}(s_t/s_L)/c$
+
+$e_s=e_{pot}(s_s/(h_b-s_L))/c$
+
+
+**Default parameter values**
+
+- channel reference velocity $v_r=0.3\,m/s$
+-  exponent of channel velocity discharge $\lambda_1=0.3$  (dimensionless)
+-  exponent of channel velocity area $\lambda_2=-0.1$  (dimensionless)
+
+- reference area $Ar=1$ square kilometers
+- reference discharge $q_r=1$ m3/s
+- velocity of water on the hillslope surface
+- infiltration from subsurface to channel
+- percentage of infiltration from top soil to subsurface β=0.005 (dimensionless),
+- total hillslope depth  ,
+- total topsoil depth SL = 0.1m,
+- surface to topsoil infiltration additive factor A=0 (dimensionless)
+- surface to topsoil infiltration multiplicative factor B=99 (dimensionless),
+- surface to topsoil infiltration exponent factor $\alpha=3$ (dimensionless).
+
 ---
 
 ## 6. Dependencies
