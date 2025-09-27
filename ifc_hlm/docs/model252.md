@@ -1,4 +1,16 @@
 # `model252.py` 
+```mermaid
+graph TD
+    A((Precipitation)) --> B[Ponded water]
+    B --> C[Soil upper layer]
+    C --> D[Soil subsurface]
+    B-->|Overland Flow|E[Channel]
+    D-->|Baseflow|E
+    B-->F((ET))
+    D-->F
+    C-->F
+    E-->G((Discharge))
+```
 
 ## Description
 **`model252.py`**  

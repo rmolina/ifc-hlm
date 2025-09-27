@@ -1,5 +1,16 @@
 # `model254.py` 
-
+```mermaid
+graph TD
+    A((Precipitation)) --> B[Ponded water]
+    B --> C[Soil upper layer]
+    C --> D[Soil subsurface]
+    B-->|Overland Flow|E[Channel]
+    D-->|Baseflow|E
+    B-->F((ET))
+    D-->F
+    C-->F
+    E-->G((Discharge))
+```
 ## Description
 **`model254.py`**  
 Implements the **Nonlinear Routing and Variable Infiltration version of the Hillslope-Link Model (HLM)** as developed at the Iowa Flood Center (IFC).
