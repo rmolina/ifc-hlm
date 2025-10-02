@@ -1,10 +1,10 @@
 [project]
 name = "ifc-hlm"
-version = "0.4.1"
+version = "0.4.2"
 description = "Hillslope-Link Model"
 authors = [{ name = "Ruben Molina", email = "rmolina@gmail.com" }]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dependencies = [
     "bmipy>=2.0",
     "networkx>=2.8",
