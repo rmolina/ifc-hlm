@@ -1,3 +1,10 @@
+## v0.4.2 - 2025-10-01
+### Changed
+- Lowered requires-python to >=3.9
+
+### Added
+- Added docs for Model252 and Model254
+
 ## v0.4.1 - 2025-07-09
 
 ### Fixed
