@@ -1,6 +1,6 @@
 [project]
 name = "ifc-hlm"
-version = "0.4.2"
+version = "0.4.3.dev0"
 description = "Hillslope-Link Model"
 authors = [{ name = "Ruben Molina", email = "rmolina@gmail.com" }]
 readme = "README.md"
