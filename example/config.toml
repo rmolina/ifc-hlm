@@ -1,0 +1,6 @@
+start_time = "2017-01-01T00:00:00"
+end_time = "2017-01-02T01:00:00"
+time_step = 60 # seconds
+edges_file = "example/edges.csv"
+initials_file = "example/initials.csv"
+parameters_file = "example/parameters.csv"
