@@ -1,30 +1,37 @@
 [project]
 name = "ifc-hlm"
-version = "0.4.3"
+version = "0.5.0"
 description = "Hillslope-Link Model"
 authors = [{ name = "Ruben Molina", email = "rmolina@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "bmipy>=2.0",
-    "networkx>=2.8",
+    "networkx>=2.8", # old engine
     "numpy>=1.21",
-    "pandas>=1.4",
-    "pyyaml>=6.0",
-    "scipy>=1.9",
-    "tqdm>=4.60",
+    "pandas>=1.4", # old engine
+    "pyyaml>=6.0", # old engine
+    "scipy>=1.9", # old engine
+    "toml>=0.10.2",
+    "tqdm>=4.60", # old engine
 ]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-# [dependency-groups]
-# dev = [
-#     "mypy>=1.16.1",
-#     "pandas-stubs>=2.0.1.230501",
-#     "scipy-stubs>=1.15.3.0",
-#     "types-networkx>=3.5.0.20250701",
-#     "types-pyyaml>=6.0.12.20250516",
-#     "types-tqdm>=4.67.0.20250516",
-# ]
+[dependency-groups]
+dev = [
+    # For examples/
+    "xarray>=2024.7.0",
+    "types-tqdm>=4.67.0.20250516",
+    # For the new engine
+    "mypy>=1.16.1",
+    "types-toml>=0.10.8.20240310",
+    # For the old engine
+    "pandas-stubs>=2.0.1.230501",
+    # "scipy-stubs>=1.4.1a3",
+    "types-networkx>=3.4", # req 3.10
+    "types-pyyaml>=6.0.12.20250516",
+    "netcdf4>=1.7.2",
+]
