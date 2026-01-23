@@ -367,10 +367,7 @@ class Hlm(ABC, Generic[P, F, S]):
         df_reordered = current_forcings.loc[target_order]  # .reset_index(drop=True)
         current_forcings_array = df_reordered.to_numpy()
 
-        if self.current_forcings.size == 0:
-            self.current_forcings = current_forcings_array.copy()
-        else:
-            self.current_forcings[:] = current_forcings_array
+        self.current_forcings = np.array(current_forcings_array, copy=True)
 
     def _get_current_states(self) -> None:
         """Get states at current time for each node."""
