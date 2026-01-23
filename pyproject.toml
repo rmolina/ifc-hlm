@@ -22,16 +22,20 @@ build-backend = "poetry.core.masonry.api"
 
 [dependency-groups]
 dev = [
-    # For examples/
-    "xarray>=2024.7.0",
-    "types-tqdm>=4.67.0.20250516",
     # For the new engine
     "mypy>=1.16.1",
     "types-toml>=0.10.8.20240310",
-    # For the old engine
-    "pandas-stubs>=2.0.1.230501",
+    #
+    # old engine
+    # "pandas-stubs>=2.0.1.230501",
     # "scipy-stubs>=1.4.1a3",
-    "types-networkx>=3.4", # req 3.10
-    "types-pyyaml>=6.0.12.20250516",
-    "netcdf4>=1.7.2",
+    # "types-networkx>=3.4", # req 3.10
+    # "types-pyyaml>=6.0.12.20250516",
+    # 
+    # examples/
+    # "xarray>=2024.7.0",
+    # "netcdf4>=1.7.2",
+    # "types-tqdm>=4.67.0.20250516",
+    # "matplotlib>=3.9.4",
+    # "dask>=2024.8.0",
 ]
