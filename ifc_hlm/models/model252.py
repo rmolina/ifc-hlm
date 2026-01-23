@@ -7,8 +7,8 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from ..hlm import ModelForcings, ModelParameters, ModelStates, NodeParameters
-from ..hlm_bmi import BmiFields, HlmBmi
+from .hlm import ModelForcings, ModelParameters, ModelStates, NodeParameters
+from .hlm_bmi import BmiFields, HlmBmi
 
 DAYS_IN_MONTH = 30
 SECONDS_IN_HOUR = 3600.0
