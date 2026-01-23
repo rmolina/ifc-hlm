@@ -368,7 +368,7 @@ class Hlm(ABC, Generic[P, F, S]):
         current_forcings_array = df_reordered.to_numpy()
 
         if self.current_forcings.size == 0:
-            self.current_forcings = current_forcings_array
+            self.current_forcings = current_forcings_array.copy()
         else:
             self.current_forcings[:] = current_forcings_array
 
