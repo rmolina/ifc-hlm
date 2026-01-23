@@ -57,7 +57,7 @@ class BmiModel(Bmi, BaseModel[I, O, P, G, D, E]):
 
     def get_var_grid(self, name: str) -> int:  # NextGen **
         """Get grid identifier for the given variable."""
-        raise NotImplementedError("get_var_grid")  # TODO
+        return 0  # TODO: Confirm
 
     def get_var_type(self, name: str) -> str:  # NextGen
         """Get data type of the given variable."""
@@ -144,15 +144,15 @@ class BmiModel(Bmi, BaseModel[I, O, P, G, D, E]):
 
     def get_grid_rank(self, grid: int) -> int:
         """Get number of dimensions of the computational grid."""
-        raise NotImplementedError("get_grid_rank")  # TODO
+        return 1  # TODO: Confirm
 
     def get_grid_size(self, grid: int) -> int:
         """Get the total number of elements in the computational grid."""
-        raise NotImplementedError("get_grid_rank")  # TODO
+        return self.num_nodes  # TODO: Confirm
 
     def get_grid_type(self, grid: int) -> str:
         """Get the grid type as a string."""
-        raise NotImplementedError("get_grid_type")  # TODO
+        return "points"  # TODO: Confirm
 
     # Uniform rectilinear
 
