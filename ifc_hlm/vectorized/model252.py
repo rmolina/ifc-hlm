@@ -91,91 +91,73 @@ class Model252(BmiModel[Forcings, States, Parameters, Globals, Derivatives, Exte
     ExternalsType = Externals
     FluxesType = Fluxes
 
-    def equations(self) -> None:
-        """Compute derivatives and store in self.derivatives."""
-
-        shape = self.num_nodes
-
+    def calculate_fluxes(self) -> None:
+        """Compute all fluxes and store in self.fluxes."""
         # === Evaporation fluxes ===
-
         S_R = 1.0  # m (Reference length)
-        Q_R = 1.0  # m3 s-1 (Reference discharge)
+        e_p = np.zeros(shape=self.num_nodes, dtype=np.float64)
+        e_t = np.zeros(shape=self.num_nodes, dtype=np.float64)
+        e_s = np.zeros(shape=self.num_nodes, dtype=np.float64)
 
-        e_p: NDArray[np.floating] = np.zeros(shape, dtype=np.float64)  # m s-1
-        e_t: NDArray[np.floating] = np.zeros(shape, dtype=np.float64)  # m s-1
-        e_s: NDArray[np.floating] = np.zeros(shape, dtype=np.float64)  # m s-1
-
-        corr: NDArray[np.floating] = (
+        corr = (
             self.outputs.s_p / S_R
             + self.outputs.s_t / self.globals.s_l
             + self.outputs.s_s / (self.globals.h_b - self.globals.s_l)
-        )  # dimensionless
+        )
 
         mask = (self.inputs.pet > 0.0) & (corr > 1e-12)
-
-        e_p[mask] = (self.outputs.s_p[mask] / S_R) * (
+        e_p[mask] = (self.outputs.s_p[mask] / S_R) * (self.inputs.pet[mask] / corr[mask])
+        e_t[mask] = (self.outputs.s_t[mask] / self.globals.s_l) * (self.inputs.pet[mask] / corr[mask])
+        e_s[mask] = (self.outputs.s_s[mask] / (self.globals.h_b - self.globals.s_l)) * (
             self.inputs.pet[mask] / corr[mask]
-        )  # m s-1
-        e_t[mask] = (self.outputs.s_t[mask] / self.globals.s_l) * (
-            self.inputs.pet[mask] / corr[mask]
-        )  # m s-1
-        e_s[mask] = (
-            self.outputs.s_s[mask]
-            / (self.globals.h_b - self.globals.s_l)
-            * (self.inputs.pet[mask] / corr[mask])
-        )  # m s-1
+        )
 
         # === Storage fluxes ===
+        sat_def = 1.0 - self.outputs.s_t / self.globals.s_l
+        pow_term = np.zeros_like(sat_def)
+        mask = sat_def > 0.0
+        pow_term[mask] = np.power(sat_def[mask], self.globals.exponent)
+        k_t = self.parameters.k_2 * (self.globals.a + self.globals.b * pow_term)
 
-        # Dimensionless saturation deficit
-        sat_def = 1.0 - self.outputs.s_t / self.globals.s_l  # dimensionless
+        q_pl = self.parameters.k_2 * self.outputs.s_p
+        q_pt = k_t * self.outputs.s_p
+        q_ts = self.parameters.k_i * self.outputs.s_t
+        q_sl = self.globals.k_3 * self.outputs.s_s
 
-        # Power term, zeroed where negative
-        pow_term = np.zeros_like(sat_def)  # dimensionless
-        mask = sat_def > 0.0  # boolean
-        pow_term[mask] = np.power(sat_def[mask], self.globals.exponent)  # dimensionless
-
-        # Transfer coefficient
-        k_t = self.parameters.k_2 * (self.globals.a + self.globals.b * pow_term)  # s-1
-
-        # Fluxes
-        q_pl = self.parameters.k_2 * self.outputs.s_p  # m s-1
-        q_pt = k_t * self.outputs.s_p  # m s-1
-        q_ts = self.parameters.k_i * self.outputs.s_t  # m s-1
-        q_sl = self.globals.k_3 * self.outputs.s_s  # m s-1
-
-        # Discharge
-        deriv_discharge = np.zeros(shape, dtype=np.float64)
-
-        # Compute discharge for ALL nodes
-        discharge = (
-            -self.outputs.q + self.parameters.a_h * (q_pl + q_sl) + self.externals.q_in
-        )
-
-        # Apply gate for negative q when lambda_1 < 1
+        discharge = -self.outputs.q + self.parameters.a_h * (q_pl + q_sl) + self.externals.q_in
         if self.globals.lambda_1 < 1.0:
-            discharge = np.where(
-                self.outputs.q < np.float64(0.0), np.float64(0.0), discharge
-            )
+            discharge = np.where(self.outputs.q < 0.0, 0.0, discharge)
 
-        # Compute derivative for ALL nodes (not just where q > 0)
-        deriv_discharge = (
-            self.parameters.invtau
-            * np.power(
-                np.maximum(self.outputs.q / Q_R, 1e-10), self.globals.lambda_1
-            )  # Prevent 0^0.2
-            * discharge
-        )
-        deriv_ponded = self.inputs.pcp - q_pl - q_pt - e_p
-        deriv_topsoil = q_pt - q_ts - e_t
-        deriv_subsurface = q_ts - q_sl - e_s
+        # Store all in Fluxes dataclass
+        self.fluxes.e_p[:] = e_p
+        self.fluxes.e_t[:] = e_t
+        self.fluxes.e_s[:] = e_s
+        self.fluxes.q_pl[:] = q_pl
+        self.fluxes.q_pt[:] = q_pt
+        self.fluxes.q_ts[:] = q_ts
+        self.fluxes.q_sl[:] = q_sl
+        self.fluxes.discharge[:] = discharge
 
-        # Store derivatives in self.derivatives
+    def calculate_derivatives(self) -> None:
+        """Compute derivatives using current fluxes and forcings."""
+        # Unpack for convenience
+        Q_R = 1.0  # reference discharge
+
+        deriv_discharge = self.parameters.invtau * np.power(np.maximum(self.outputs.q / Q_R, 1e-10), self.globals.lambda_1) * self.fluxes.discharge
+        deriv_ponded = self.inputs.pcp - self.fluxes.q_pl - self.fluxes.q_pt - self.fluxes.e_p
+        deriv_topsoil = self.fluxes.q_pt - self.fluxes.q_ts - self.fluxes.e_t
+        deriv_subsurface = self.fluxes.q_ts - self.fluxes.q_sl - self.fluxes.e_s
+
         self.derivatives.q[:] = deriv_discharge
         self.derivatives.s_p[:] = deriv_ponded
         self.derivatives.s_t[:] = deriv_topsoil
         self.derivatives.s_s[:] = deriv_subsurface
 
+    def equations(self) -> None:
+        """Compute fluxes and derivatives."""
+        self.calculate_fluxes()
+        self.calculate_derivatives()
+        
     def compute_external_fluxes(self) -> None:
         """Compute external fluxes and store in self.externals."""
         q_src = np.maximum(self.outputs.q[self.edges_src], 1e-6)  # Clamp sources
