@@ -51,7 +51,7 @@ class Parameters:
     a_i: NDArray[np.floating] = field(metadata={"units": "m2"})
     l_i: NDArray[np.floating] = field(metadata={"units": "m"})
     a_h: NDArray[np.floating] = field(metadata={"units": "m2"})
-    
+
     # These are computed in compute_extra_parameters() and filled in later
     # Note: use field(init=False) to indicate they are not passed to the constructor
     invtau: NDArray[np.floating] = field(init=False, metadata={"units": "s-1"})  # s-1
@@ -81,7 +81,9 @@ class Fluxes:
     discharge: NDArray[np.floating]
 
 
-class Model252(BmiModel[Forcings, States, Parameters, Globals, Derivatives, Externals, Fluxes]):
+class Model252(
+    BmiModel[Forcings, States, Parameters, Globals, Derivatives, Externals, Fluxes]
+):
 
     InputsType = Forcings
     OutputsType = States
@@ -106,8 +108,12 @@ class Model252(BmiModel[Forcings, States, Parameters, Globals, Derivatives, Exte
         )
 
         mask = (self.inputs.pet > 0.0) & (corr > 1e-12)
-        e_p[mask] = (self.outputs.s_p[mask] / S_R) * (self.inputs.pet[mask] / corr[mask])
-        e_t[mask] = (self.outputs.s_t[mask] / self.globals.s_l) * (self.inputs.pet[mask] / corr[mask])
+        e_p[mask] = (self.outputs.s_p[mask] / S_R) * (
+            self.inputs.pet[mask] / corr[mask]
+        )
+        e_t[mask] = (self.outputs.s_t[mask] / self.globals.s_l) * (
+            self.inputs.pet[mask] / corr[mask]
+        )
         e_s[mask] = (self.outputs.s_s[mask] / (self.globals.h_b - self.globals.s_l)) * (
             self.inputs.pet[mask] / corr[mask]
         )
@@ -125,7 +131,9 @@ class Model252(BmiModel[Forcings, States, Parameters, Globals, Derivatives, Exte
         q_sl = self.globals.k_3 * self.outputs.s_s
 
         # === Discharge ===
-        discharge = -self.outputs.q + self.parameters.a_h * (q_pl + q_sl) + self.externals.q_in
+        discharge = (
+            -self.outputs.q + self.parameters.a_h * (q_pl + q_sl) + self.externals.q_in
+        )
         if self.globals.lambda_1 < 1.0:
             discharge = np.where(self.outputs.q < 0.0, 0.0, discharge)
 
@@ -144,22 +152,23 @@ class Model252(BmiModel[Forcings, States, Parameters, Globals, Derivatives, Exte
         # Unpack for convenience
         Q_R = 1.0  # reference discharge
 
-        deriv_discharge = self.parameters.invtau * np.power(np.maximum(self.outputs.q / Q_R, 1e-10), self.globals.lambda_1) * self.fluxes.discharge
-        deriv_ponded = self.inputs.pcp - self.fluxes.q_pl - self.fluxes.q_pt - self.fluxes.e_p
-        deriv_topsoil = self.fluxes.q_pt - self.fluxes.q_ts - self.fluxes.e_t
-        deriv_subsurface = self.fluxes.q_ts - self.fluxes.q_sl - self.fluxes.e_s
-
         # Store all in derivatives dataclass
-        self.derivatives.q[:] = deriv_discharge
-        self.derivatives.s_p[:] = deriv_ponded
-        self.derivatives.s_t[:] = deriv_topsoil
-        self.derivatives.s_s[:] = deriv_subsurface
+        self.derivatives.q[:] = (
+            self.parameters.invtau
+            * np.power(np.maximum(self.outputs.q / Q_R, 1e-10), self.globals.lambda_1)
+            * self.fluxes.discharge
+        )
+        self.derivatives.s_p[:] = (
+            self.inputs.pcp - self.fluxes.q_pl - self.fluxes.q_pt - self.fluxes.e_p
+        )
+        self.derivatives.s_t[:] = self.fluxes.q_pt - self.fluxes.q_ts - self.fluxes.e_t
+        self.derivatives.s_s[:] = self.fluxes.q_ts - self.fluxes.q_sl - self.fluxes.e_s
 
     # def equations(self) -> None:
     #     """Compute fluxes and derivatives."""
     #     self.compute_fluxes()
     #     self.compute_derivatives()
-        
+
     def compute_external_fluxes(self) -> None:
         """Compute external fluxes and store in self.externals."""
         q_src = np.maximum(self.outputs.q[self.edges_src], 1e-6)  # Clamp sources
