@@ -5,6 +5,7 @@ description = "Hillslope-Link Model"
 authors = [{ name = "Ruben Molina", email = "rmolina@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.9"
+#requires-python = ">=3.10"
 dependencies = [
     "bmipy>=2.0",
     "networkx>=2.8", # old engine
@@ -21,5 +22,13 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [dependency-groups]
-dev = ["mypy>=1.16.1", "types-toml>=0.10.8.20240310"]
+dev = [
+    "mypy>=1.16.1",
+    "pandas-stubs>=2.2.2.240807",
+    #"scipy-stubs>=1.15.3.0",
+    "types-networkx>=3.4.2.20250509",
+    "types-pyyaml>=6.0.12.20250915",
+    "types-toml>=0.10.8.20240310",
+    "types-tqdm>=4.67.3.20260205",
+]
 examples = ["matplotlib>=3.9.4", "netcdf4>=1.7.2", "xarray>=2024.7.0"]
