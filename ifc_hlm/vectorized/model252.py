@@ -91,7 +91,7 @@ class Model252(BmiModel[Forcings, States, Parameters, Globals, Derivatives, Exte
     ExternalsType = Externals
     FluxesType = Fluxes
 
-    def calculate_fluxes(self) -> None:
+    def compute_fluxes(self) -> None:
         """Compute all fluxes and store in self.fluxes."""
         # === Evaporation fluxes ===
         S_R = 1.0  # m (Reference length)
@@ -124,6 +124,7 @@ class Model252(BmiModel[Forcings, States, Parameters, Globals, Derivatives, Exte
         q_ts = self.parameters.k_i * self.outputs.s_t
         q_sl = self.globals.k_3 * self.outputs.s_s
 
+        # === Discharge ===
         discharge = -self.outputs.q + self.parameters.a_h * (q_pl + q_sl) + self.externals.q_in
         if self.globals.lambda_1 < 1.0:
             discharge = np.where(self.outputs.q < 0.0, 0.0, discharge)
@@ -138,7 +139,7 @@ class Model252(BmiModel[Forcings, States, Parameters, Globals, Derivatives, Exte
         self.fluxes.q_sl[:] = q_sl
         self.fluxes.discharge[:] = discharge
 
-    def calculate_derivatives(self) -> None:
+    def compute_derivatives(self) -> None:
         """Compute derivatives using current fluxes and forcings."""
         # Unpack for convenience
         Q_R = 1.0  # reference discharge
@@ -148,15 +149,16 @@ class Model252(BmiModel[Forcings, States, Parameters, Globals, Derivatives, Exte
         deriv_topsoil = self.fluxes.q_pt - self.fluxes.q_ts - self.fluxes.e_t
         deriv_subsurface = self.fluxes.q_ts - self.fluxes.q_sl - self.fluxes.e_s
 
+        # Store all in derivatives dataclass
         self.derivatives.q[:] = deriv_discharge
         self.derivatives.s_p[:] = deriv_ponded
         self.derivatives.s_t[:] = deriv_topsoil
         self.derivatives.s_s[:] = deriv_subsurface
 
-    def equations(self) -> None:
-        """Compute fluxes and derivatives."""
-        self.calculate_fluxes()
-        self.calculate_derivatives()
+    # def equations(self) -> None:
+    #     """Compute fluxes and derivatives."""
+    #     self.compute_fluxes()
+    #     self.compute_derivatives()
         
     def compute_external_fluxes(self) -> None:
         """Compute external fluxes and store in self.externals."""

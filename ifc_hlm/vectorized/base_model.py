@@ -247,7 +247,8 @@ class BaseModel(ABC, Generic[I, O, P, G, D, E, F]):
 
         # Compute externals and derivatives
         self.compute_external_fluxes()
-        self.equations()
+        self.compute_fluxes()
+        self.compute_derivatives()
 
         # Update each output field
         for name in self.output_names:
@@ -285,7 +286,9 @@ class BaseModel(ABC, Generic[I, O, P, G, D, E, F]):
 
         # k1 - use current state
         self.compute_external_fluxes()
-        self.equations()
+        self.compute_fluxes()
+        self.compute_derivatives()
+
         for f in fields(states):
             getattr(k1, f.name)[:] = getattr(self.derivatives, f.name)
 
@@ -298,7 +301,9 @@ class BaseModel(ABC, Generic[I, O, P, G, D, E, F]):
         )
         self.outputs = y2
         self.compute_external_fluxes()
-        self.equations()
+        self.compute_fluxes()
+        self.compute_derivatives()
+
         for f in fields(states):
             getattr(k2, f.name)[:] = getattr(self.derivatives, f.name)
 
@@ -311,7 +316,9 @@ class BaseModel(ABC, Generic[I, O, P, G, D, E, F]):
         )
         self.outputs = y3
         self.compute_external_fluxes()
-        self.equations()
+        self.compute_fluxes()
+        self.compute_derivatives()
+
         for f in fields(states):
             getattr(k3, f.name)[:] = getattr(self.derivatives, f.name)
 
@@ -324,7 +331,9 @@ class BaseModel(ABC, Generic[I, O, P, G, D, E, F]):
         )
         self.outputs = y4
         self.compute_external_fluxes()
-        self.equations()
+        self.compute_fluxes()
+        self.compute_derivatives()
+
         for f in fields(states):
             getattr(k4, f.name)[:] = getattr(self.derivatives, f.name)
 
@@ -459,16 +468,21 @@ class BaseModel(ABC, Generic[I, O, P, G, D, E, F]):
         return False
 
     @abstractmethod
-    def compute_external_fluxes(self) -> None:
-        """Compute external fluxes and store in self.externals."""
-        ...
-
-    @abstractmethod
     def compute_extra_parameters(self) -> None:
         """Compute derived parameters and store in self.parameters."""
         ...
 
     @abstractmethod
-    def equations(self) -> None:
+    def compute_external_fluxes(self) -> None:
+        """Compute external fluxes and store in self.externals."""
+        ...
+
+    @abstractmethod
+    def compute_fluxes(self) -> None:
+        """Compute fluxes and store in self.fluxes."""
+        ...
+
+    @abstractmethod
+    def compute_derivatives(self) -> None:
         """Compute derivatives and store in self.derivatives."""
         ...
