@@ -97,9 +97,9 @@ class Model252(
         """Compute all fluxes and store in self.fluxes."""
         # === Evaporation fluxes ===
         S_R = 1.0  # m (Reference length)
-        e_p = np.zeros(shape=self.num_nodes, dtype=np.float64)
-        e_t = np.zeros(shape=self.num_nodes, dtype=np.float64)
-        e_s = np.zeros(shape=self.num_nodes, dtype=np.float64)
+        self.fluxes.e_p[:] = 0.0
+        self.fluxes.e_t[:] = 0.0
+        self.fluxes.e_s[:] = 0.0
 
         corr = (
             self.outputs.s_p / S_R
@@ -108,15 +108,15 @@ class Model252(
         )
 
         mask = (self.inputs.pet > 0.0) & (corr > 1e-12)
-        e_p[mask] = (self.outputs.s_p[mask] / S_R) * (
+        self.fluxes.e_p[mask] = (self.outputs.s_p[mask] / S_R) * (
             self.inputs.pet[mask] / corr[mask]
         )
-        e_t[mask] = (self.outputs.s_t[mask] / self.globals.s_l) * (
+        self.fluxes.e_t[mask] = (self.outputs.s_t[mask] / self.globals.s_l) * (
             self.inputs.pet[mask] / corr[mask]
         )
-        e_s[mask] = (self.outputs.s_s[mask] / (self.globals.h_b - self.globals.s_l)) * (
-            self.inputs.pet[mask] / corr[mask]
-        )
+        self.fluxes.e_s[mask] = (
+            self.outputs.s_s[mask] / (self.globals.h_b - self.globals.s_l)
+        ) * (self.inputs.pet[mask] / corr[mask])
 
         # === Storage fluxes ===
         sat_def = 1.0 - self.outputs.s_t / self.globals.s_l
@@ -125,26 +125,21 @@ class Model252(
         pow_term[mask] = np.power(sat_def[mask], self.globals.exponent)
         k_t = self.parameters.k_2 * (self.globals.a + self.globals.b * pow_term)
 
-        q_pl = self.parameters.k_2 * self.outputs.s_p
-        q_pt = k_t * self.outputs.s_p
-        q_ts = self.parameters.k_i * self.outputs.s_t
-        q_sl = self.globals.k_3 * self.outputs.s_s
+        self.fluxes.q_pl[:] = self.parameters.k_2 * self.outputs.s_p
+        self.fluxes.q_pt[:] = k_t * self.outputs.s_p
+        self.fluxes.q_ts[:] = self.parameters.k_i * self.outputs.s_t
+        self.fluxes.q_sl[:] = self.globals.k_3 * self.outputs.s_s
 
         # === Discharge ===
         discharge = (
-            -self.outputs.q + self.parameters.a_h * (q_pl + q_sl) + self.externals.q_in
+            -self.outputs.q
+            + self.parameters.a_h * (self.fluxes.q_pl + self.fluxes.q_sl)
+            + self.externals.q_in
         )
         if self.globals.lambda_1 < 1.0:
             discharge = np.where(self.outputs.q < 0.0, 0.0, discharge)
 
-        # Store all in Fluxes dataclass
-        self.fluxes.e_p[:] = e_p
-        self.fluxes.e_t[:] = e_t
-        self.fluxes.e_s[:] = e_s
-        self.fluxes.q_pl[:] = q_pl
-        self.fluxes.q_pt[:] = q_pt
-        self.fluxes.q_ts[:] = q_ts
-        self.fluxes.q_sl[:] = q_sl
+        # Store in Fluxes dataclass
         self.fluxes.discharge[:] = discharge
 
     def compute_derivatives(self) -> None:
