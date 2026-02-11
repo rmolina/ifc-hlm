@@ -26,40 +26,40 @@ class Globals:
 
 @dataclass
 class Forcings:
-    pcp: NDArray[np.float64] = field(metadata={"units": "m s-1", "location": "face"})
-    pet: NDArray[np.float64] = field(metadata={"units": "m s-1", "location": "face"})
+    pcp: NDArray[np.floating] = field(metadata={"units": "m s-1", "location": "face"})
+    pet: NDArray[np.floating] = field(metadata={"units": "m s-1", "location": "face"})
 
 
 @dataclass
 class States:
-    q: NDArray[np.float64] = field(metadata={"units": "m3 s-1", "location": "node"})
-    s_p: NDArray[np.float64] = field(metadata={"units": "m", "location": "face"})
-    s_t: NDArray[np.float64] = field(metadata={"units": "m", "location": "face"})
-    s_s: NDArray[np.float64] = field(metadata={"units": "m", "location": "face"})
+    q: NDArray[np.floating] = field(metadata={"units": "m3 s-1", "location": "node"})
+    s_p: NDArray[np.floating] = field(metadata={"units": "m", "location": "face"})
+    s_t: NDArray[np.floating] = field(metadata={"units": "m", "location": "face"})
+    s_s: NDArray[np.floating] = field(metadata={"units": "m", "location": "face"})
 
 
 @dataclass
 class Derivatives:
-    q: NDArray[np.float64] = field(metadata={"units": "m3 s-2"})
-    s_p: NDArray[np.float64] = field(metadata={"units": "m s-1"})
-    s_t: NDArray[np.float64] = field(metadata={"units": "m s-1"})
-    s_s: NDArray[np.float64] = field(metadata={"units": "m s-1"})
+    q: NDArray[np.floating] = field(metadata={"units": "m3 s-2"})
+    s_p: NDArray[np.floating] = field(metadata={"units": "m s-1"})
+    s_t: NDArray[np.floating] = field(metadata={"units": "m s-1"})
+    s_s: NDArray[np.floating] = field(metadata={"units": "m s-1"})
 
 
 @dataclass
 class Parameters:
-    a_i: NDArray[np.float64] = field(metadata={"units": "m2"})
-    l_i: NDArray[np.float64] = field(metadata={"units": "m"})
-    a_h: NDArray[np.float64] = field(metadata={"units": "m2"})
+    a_i: NDArray[np.floating] = field(metadata={"units": "m2"})
+    l_i: NDArray[np.floating] = field(metadata={"units": "m"})
+    a_h: NDArray[np.floating] = field(metadata={"units": "m2"})
 
-    invtau: NDArray[np.float64] = field(init=False, metadata={"units": "s-1"})  # s-1
-    k_2: NDArray[np.float64] = field(init=False, metadata={"units": "s-1"})  # s-1
-    k_i: NDArray[np.float64] = field(init=False, metadata={"units": "s-1"})  # s-1
+    invtau: NDArray[np.floating] = field(init=False, metadata={"units": "s-1"})  # s-1
+    k_2: NDArray[np.floating] = field(init=False, metadata={"units": "s-1"})  # s-1
+    k_i: NDArray[np.floating] = field(init=False, metadata={"units": "s-1"})  # s-1
 
 
 @dataclass
 class Externals:
-    q_in: NDArray[np.float64] = field(metadata={"units": "m3 s-1", "location": "node"})
+    q_in: NDArray[np.floating] = field(metadata={"units": "m3 s-1", "location": "node"})
 
 
 class Model252(BmiModel[Forcings, States, Parameters, Globals, Derivatives, Externals]):
@@ -81,11 +81,11 @@ class Model252(BmiModel[Forcings, States, Parameters, Globals, Derivatives, Exte
         S_R = 1.0  # m (Reference length)
         Q_R = 1.0  # m3 s-1 (Reference discharge)
 
-        e_p: NDArray[np.float64] = np.zeros(shape, dtype=np.float64)  # m s-1
-        e_t: NDArray[np.float64] = np.zeros(shape, dtype=np.float64)  # m s-1
-        e_s: NDArray[np.float64] = np.zeros(shape, dtype=np.float64)  # m s-1
+        e_p: NDArray[np.floating] = np.zeros(shape, dtype=np.float64)  # m s-1
+        e_t: NDArray[np.floating] = np.zeros(shape, dtype=np.float64)  # m s-1
+        e_s: NDArray[np.floating] = np.zeros(shape, dtype=np.float64)  # m s-1
 
-        corr: NDArray[np.float64] = (
+        corr: NDArray[np.floating] = (
             self.outputs.s_p / S_R
             + self.outputs.s_t / self.globals.s_l
             + self.outputs.s_s / (self.globals.h_b - self.globals.s_l)
