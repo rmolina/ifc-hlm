@@ -15,15 +15,16 @@ from .config import Config
 INTEGRATION_DTYPE = np.float64
 
 
-I = TypeVar("I")
-O = TypeVar("O")
-P = TypeVar("P")
-G = TypeVar("G")
-D = TypeVar("D")
-E = TypeVar("E")
+I = TypeVar("I")  # Inputs
+O = TypeVar("O")  # Outputs
+P = TypeVar("P")  # Parameters
+G = TypeVar("G")  # Globals
+D = TypeVar("D")  # Derivaitives
+E = TypeVar("E")  # Externals
+F = TypeVar("F")  # Fluxes
 
 
-class BaseModel(ABC, Generic[I, O, P, G, D, E]):
+class BaseModel(ABC, Generic[I, O, P, G, D, E, F]):
 
     InputsType: Type[I]
     OutputsType: Type[O]
@@ -31,6 +32,7 @@ class BaseModel(ABC, Generic[I, O, P, G, D, E]):
     GlobalsType: Type[G]
     DerivativesType: Type[D]
     ExternalsType: Type[E]
+    FluxesType: Type[F]
 
     inputs: I
     outputs: O
@@ -38,6 +40,7 @@ class BaseModel(ABC, Generic[I, O, P, G, D, E]):
     globals: G
     derivatives: D
     externals: E
+    fluxes: F
 
     config: Config
     current_time: np.datetime64
@@ -94,11 +97,17 @@ class BaseModel(ABC, Generic[I, O, P, G, D, E]):
             and is_dataclass(self.OutputsType)
             and is_dataclass(self.DerivativesType)
             and is_dataclass(self.ExternalsType)
+            and is_dataclass(self.FluxesType)
         )
 
         # Build inputs
         self.inputs = self.InputsType(
             **{f.name: np.full(self.num_nodes, np.nan) for f in fields(self.InputsType)}
+        )
+
+        # Build fluxes
+        self.fluxes = self.FluxesType(
+            **{f.name: np.full(self.num_nodes, np.nan) for f in fields(self.FluxesType)}
         )
 
         # Build outputs

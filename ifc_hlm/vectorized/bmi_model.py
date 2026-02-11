@@ -8,15 +8,16 @@ from numpy.typing import NDArray
 
 from .base_model import BaseModel
 
-I = TypeVar("I")
-O = TypeVar("O")
-P = TypeVar("P")
-G = TypeVar("G")
-D = TypeVar("D")
-E = TypeVar("E")
+I = TypeVar("I")  # Inputs
+O = TypeVar("O")  # Outputs
+P = TypeVar("P")  # Parameters
+G = TypeVar("G")  # Globals
+D = TypeVar("D")  # Derivaitives
+E = TypeVar("E")  # Externals
+F = TypeVar("F")  # Fluxes
 
 
-class BmiModel(Bmi, BaseModel[I, O, P, G, D, E]):
+class BmiModel(Bmi, BaseModel[I, O, P, G, D, E, F]):
 
     def initialize(self, config_file: str) -> None:  # NextGen
         """Perform startup tasks for the model."""

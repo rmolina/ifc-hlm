@@ -51,7 +51,9 @@ class Parameters:
     a_i: NDArray[np.floating] = field(metadata={"units": "m2"})
     l_i: NDArray[np.floating] = field(metadata={"units": "m"})
     a_h: NDArray[np.floating] = field(metadata={"units": "m2"})
-
+    
+    # These are computed in compute_extra_parameters() and filled in later
+    # Note: use field(init=False) to indicate they are not passed to the constructor
     invtau: NDArray[np.floating] = field(init=False, metadata={"units": "s-1"})  # s-1
     k_2: NDArray[np.floating] = field(init=False, metadata={"units": "s-1"})  # s-1
     k_i: NDArray[np.floating] = field(init=False, metadata={"units": "s-1"})  # s-1
@@ -62,7 +64,24 @@ class Externals:
     q_in: NDArray[np.floating] = field(metadata={"units": "m3 s-1", "location": "node"})
 
 
-class Model252(BmiModel[Forcings, States, Parameters, Globals, Derivatives, Externals]):
+@dataclass
+class Fluxes:
+    # Evaporation [m s-1]
+    e_p: NDArray[np.floating]
+    e_t: NDArray[np.floating]
+    e_s: NDArray[np.floating]
+
+    # Vertical transfers [m s-1]
+    q_pl: NDArray[np.floating]
+    q_pt: NDArray[np.floating]
+    q_ts: NDArray[np.floating]
+    q_sl: NDArray[np.floating]
+
+    # Lateral discharge driver [m3 s-1]
+    discharge: NDArray[np.floating]
+
+
+class Model252(BmiModel[Forcings, States, Parameters, Globals, Derivatives, Externals, Fluxes]):
 
     InputsType = Forcings
     OutputsType = States
@@ -70,6 +89,7 @@ class Model252(BmiModel[Forcings, States, Parameters, Globals, Derivatives, Exte
     GlobalsType = Globals
     DerivativesType = Derivatives
     ExternalsType = Externals
+    FluxesType = Fluxes
 
     def equations(self) -> None:
         """Compute derivatives and store in self.derivatives."""
