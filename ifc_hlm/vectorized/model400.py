@@ -84,24 +84,27 @@ class Globals:
 class Forcings:
     rainfall: NDArray[np.floating] = field(
         metadata={
+            "description": "rainfall intensity",
             "units": "m s-1",
-            "location": "face",
         }
     )
     e_pot: NDArray[np.floating] = field(
         metadata={
+            "description": "potential evaporation",
             "units": "m s-1",
             "location": "face",
         }
     )
     temperature: NDArray[np.floating] = field(
         metadata={
+            "description": "air temperature",
             "units": "degC",
             "location": "face",
         }
     )
     frozen_ground: NDArray[np.bool] = field(
         metadata={
+            "description": "boolean array indicating if the ground is frozen",
             "units": "1",
             "location": "face",
         }
@@ -160,49 +163,42 @@ class Derivatives:
         metadata={
             "description": "change in discharge",
             "units": "m3 s-2",
-            "location": "node",
         }
     )
     h0: NDArray[np.floating] = field(
         metadata={
             "description": "change in snow storage",
             "units": "m s-1",
-            "location": "face",
         }
     )
     h1: NDArray[np.floating] = field(
         metadata={
             "description": "change in static storage",
             "units": "m s-1",
-            "location": "face",
         }
     )
     h2: NDArray[np.floating] = field(
         metadata={
             "description": "change in water in the hillslope surface",
             "units": "m s-1",
-            "location": "face",
         }
     )
     h3: NDArray[np.floating] = field(
         metadata={
             "description": "change in water in the gravitational storage in the upper part of soil",
             "units": "m s-1",
-            "location": "face",
         }
     )
     h4: NDArray[np.floating] = field(
         metadata={
             "description": "change in water in the aquifer storage",
             "units": "m s-1",
-            "location": "face",
         }
     )
     h5: NDArray[np.floating] = field(
         metadata={
             "description": "change in snow storage",
             "units": "m s-1",
-            "location": "face",
         }
     )
 
@@ -239,7 +235,6 @@ class Externals:
         metadata={
             "description": "discharge",
             "units": "m3 s-1",
-            "location": "node",
         }
     )
 
