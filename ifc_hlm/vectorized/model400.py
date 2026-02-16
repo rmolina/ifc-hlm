@@ -63,19 +63,19 @@ class Globals:
     alpha4: float = field(
         metadata={
             "description": "residence time",
-            "units": "s",  # TODO: this is in seconds, but the original model uses days. Make sure to convert appropriately in the code.
+            "units": "s",
         }
     )
     melt_factor: float = field(
         metadata={
-            "description": "mm day-1 degCelsius-1",
-            "units": "mm day-1 degCelsius-1",
+            "description": "melting factor for snowmelt",
+            "units": "m s-1 degC-1",
         }
     )
     temp_thres: float = field(
         metadata={
-            "description": "degCelsius",
-            "units": "degCelsius",
+            "description": "temperature threshold for snow/rain partitioning",
+            "units": "degC",
         }
     )
 
@@ -374,15 +374,6 @@ class Model400(
     def compute_extra_parameters(self) -> None:
         """Compute derived parameters and store in self.parameters."""
 
-        # TODO: DO NOT REMOVE! This assertion is critical to ensure the model behaves correctly and does not produce unphysical results. The original model assumes that alpha4 is greater than or equal to 1, which corresponds to a residence time of at least 1 minute. If alpha4 is less than 1, it would imply a residence time of less than 1 minute, which could lead to division by zero or negative outflow in the computation of the aquifer outflow. By keeping this assertion, we ensure that the model remains stable and produces physically meaningful results.
-        assert (
-            self.globals.alpha4 >= 1
-        ), "alpha4 must be >= 1 to avoid division by zero or negative outflow"
-
-        assert (
-            self.globals.alpha3 >= 1
-        ), "alpha3 must be >= 1 to avoid division by zero or negative outflow"
-
         A_R = 1.0e6  # m2 (Reference area)
 
         self.parameters.invtau[:] = (
@@ -390,3 +381,11 @@ class Model400(
             * np.power(self.parameters.a_i / A_R, self.globals.lambda_2)
             / ((1.0 - self.globals.lambda_1) * self.parameters.l_i)
         )  # s-1
+
+    def initialize(self, config_file: str) -> None:
+        # Call the parent class's initialize method to set up the model
+        super().initialize(config_file)
+
+        # Assert model-specific constraints
+        assert self.globals.alpha4 >= 1, "alpha4 must be >= 1"
+        assert self.globals.alpha3 >= 1, "alpha3 must be >= 1"
