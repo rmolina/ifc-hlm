@@ -67,18 +67,44 @@ class Externals:
 @dataclass
 class Fluxes:
     # Evaporation [m s-1]
-    e_p: NDArray[np.floating]
-    e_t: NDArray[np.floating]
-    e_s: NDArray[np.floating]
+    e_p: NDArray[np.floating] = field(metadata={"units": "m s-1", "location": "node"})
+    e_t: NDArray[np.floating] = field(metadata={"units": "m s-1", "location": "node"})
+    e_s: NDArray[np.floating] = field(metadata={"units": "m s-1", "location": "node"})
 
     # Vertical transfers [m s-1]
-    q_pl: NDArray[np.floating]
-    q_pt: NDArray[np.floating]
-    q_ts: NDArray[np.floating]
-    q_sl: NDArray[np.floating]
+    q_pl: NDArray[np.floating] = field(
+        metadata={
+            "description": "from ponded to link",
+            "units": "m s-1",
+            "location": "node",
+        }
+    )
+    q_pt: NDArray[np.floating] = field(
+        metadata={
+            "description": "from ponded to link",
+            "units": "m s-1",
+            "location": "node",
+        }
+    )
+    q_ts: NDArray[np.floating] = field(
+        metadata={
+            "description": "from topsoil to subsurface",
+            "units": "m s-1",
+            "location": "node",
+        }
+    )
+    q_sl: NDArray[np.floating] = field(
+        metadata={
+            "description": "from subsurface to link",
+            "units": "m s-1",
+            "location": "node",
+        }
+    )
 
     # Lateral discharge driver [m3 s-1]
-    discharge: NDArray[np.floating]
+    discharge: NDArray[np.floating] = field(
+        metadata={"units": "m3 s-1", "location": "node"}
+    )
 
 
 class Model252(
