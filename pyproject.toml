@@ -8,6 +8,7 @@ requires-python = ">=3.9"
 #requires-python = ">=3.10"
 dependencies = [
     "bmipy>=2.0",
+    "matplotlib>=3.9.4",
     "networkx>=2.8", # old engine
     "numpy>=1.21",
     "pandas>=1.4",   # old engine
@@ -34,3 +35,8 @@ dev = [
     "types-tqdm>=4.67.3.20260205",
 ]
 examples = ["matplotlib>=3.9.4", "netcdf4>=1.7.2", "xarray>=2024.7.0"]
+
+[tool.uv.workspace]
+members = [
+    "data",
+]

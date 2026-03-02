@@ -1,6 +1,6 @@
 import numpy as np
 
-from ifc_hlm.vectorized import Model252
+from ifc_hlm.vectorized import Model400
 
 CONFIG_TOML_FILE = "config.toml"
 
@@ -10,14 +10,14 @@ PET_MPS = 19.0 / (1000 * 30 * 24 * 3600)  # mm/month -> m/s
 
 def main() -> None:
 
-    # Instantiate Model252 and initialize it from a config file
-    model = Model252()
+    # Instantiate Model400 and initialize it from a config file
+    model = Model400()
     model.initialize(CONFIG_TOML_FILE)
 
     # Retrieve component name
     component_name = model.get_component_name()
     print(f"{component_name=}")
-    # component_name='Model252'
+    # component_name='Model400'
 
     # Retrieve input and output variable_names and units
     input_vars = {

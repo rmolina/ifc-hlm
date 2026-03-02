@@ -18,6 +18,8 @@ class Config:
     initials_file: Path
     parameters_file: Path
 
+    globals: dict[str, float] | None = None # Global parameters (optional)
+
     time_units: Literal["s"] = "s"
 
     def __init__(self, path: str) -> None:
@@ -30,6 +32,8 @@ class Config:
         self.edges_file = Path(data["edges_file"])
         self.initials_file = Path(data["initials_file"])
         self.parameters_file = Path(data["parameters_file"])
+
+        self.globals = data.get("globals", None)
 
         if self.end_time <= self.start_time:
             raise ValueError(

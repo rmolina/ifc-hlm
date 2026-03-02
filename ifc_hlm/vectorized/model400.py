@@ -11,72 +11,83 @@ from .bmi_model import BmiModel
 @dataclass
 class Globals:
 
-    v_0: float = field(
+    v_0: float | None = field(
         metadata={
             "description": "reference velocity",
             "units": "m s-1",
-        }
+        },
+        default=None,
     )
 
-    lambda_1: float = field(
+    lambda_1: float | None = field(
         metadata={
             "description": "discharge exponent",
             "units": "1",
-        }
+        },
+        default=None,
     )
-    lambda_2: float = field(
+    lambda_2: float | None = field(
         metadata={
             "description": "drainage area exponent",
             "units": "1",
-        }
+        },
+        default=None,
     )
-    Hu: float = field(
+    Hu: float | None = field(
         metadata={
             "description": "max available storage in static tank",
             "units": "m",
-        }
+        },
+        default=None,
     )
-    infiltration: float = field(
+    infiltration: float | None = field(
         metadata={
             "description": "infiltration rate",
             "units": "m s-1",
-        }
+        },
+        default=None,
     )
-    percolation: float = field(
+    percolation: float | None = field(
         metadata={
             "description": "percolation rate to aquifer",
             "units": "m s-1",
-        }
+        },
+        default=None,
     )
-    alpha2: float = field(
+    alpha2: float | None = field(
         metadata={
             "description": "velocity",
             "units": "m s-1",
-        }
+        },
+        default=None,
     )
-    alpha3: float = field(
+    alpha3: float | None = field(
         metadata={
             "description": "residence time",
             "units": "s",
-        }
+        },
+        default=None,
     )
-    alpha4: float = field(
+    alpha4: float | None = field(
         metadata={
             "description": "residence time",
             "units": "s",
-        }
+        },
+        default=None,
     )
-    melt_factor: float = field(
+    melt_factor: float | None = field(
         metadata={
             "description": "melting factor for snowmelt",
             "units": "m s-1 degC-1",
-        }
+        },
+        default=None,
     )
-    temp_thres: float = field(
+    temp_thres: float | None = field(
         metadata={
             "description": "temperature threshold for snow/rain partitioning",
             "units": "degC",
-        }
+        },
+        default=None,
     )
 
 

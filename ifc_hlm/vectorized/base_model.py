@@ -136,14 +136,24 @@ class BaseModel(ABC, Generic[I, O, P, G, D, E, F]):
 
     def _initialize_globals(self) -> None:
         assert is_dataclass(self.GlobalsType)
+        print(f"Initializing globals for {self.__class__.__name__}...")
 
         # Start from defaults
         data = asdict(self.GlobalsType())
+
+        print(f"Config: {self.config}")
 
         # Overlay config overrides (if any)
         overrides = getattr(self.config, "globals", None)
         if overrides:
             data.update(overrides)
+
+        print(f"Overrides: {overrides}")
+        print(f"Globals after applying config overrides: {data}")
+
+        for key, value in data.items():
+            if data[key]   is None:
+                raise ValueError(f"Global '{key}' is required but not set in config or defaults")
 
         # Rebuild dataclass
         self.globals = self.GlobalsType(**data)
