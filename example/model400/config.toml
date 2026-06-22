@@ -1,0 +1,20 @@
+start_time = "1970-01-01T00:00:00"
+end_time = "1970-01-07T00:00:00"
+time_step = 30 # seconds
+integrator = "rk4"
+edges_file = "felipe-test1/edges.csv"
+initials_file = "felipe-test1/initials.csv"
+parameters_file = "felipe-test1/parameters.csv"
+
+[globals]
+v_0 = 0.33 # m/s
+lambda_1 = 0.2
+lambda_2 = -0.1
+Hu = 0.1 # 100 mm -> m
+infiltration = 1.38e-6 # 5 mm/hr -> m/s
+percolation = 5.55e-7 # 2 mm/hr -> m/s
+alpha2 = 0.2 # surf_vel[m/s]
+alpha3 = 259200 # 3 days in seconds
+alpha4 = 8640000 # 100 days in seconds
+melt_factor = 5.78e-8 # 5.0 mm/day/celsius -> m/s/celsius
+temp_thres = 0.0 # temp_threshold[celsius]

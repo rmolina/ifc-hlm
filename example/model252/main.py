@@ -14,6 +14,8 @@ def main() -> None:
     model = Model400()
     model.initialize(CONFIG_TOML_FILE)
 
+    # print(model.outputs)
+
     # Retrieve component name
     component_name = model.get_component_name()
     print(f"{component_name=}")
@@ -42,25 +44,59 @@ def main() -> None:
     print(f"{grid_size=}")
     # grid_size=6359
 
+
+
     # Set precicipitation value (same value on all hillslopes)
     pcp = np.full(shape=grid_size, fill_value=PCP_MPS)
-    model.set_value("pcp", pcp)
+    model.set_value("rainfall", pcp)
 
     # Set potential evapotranspiration value (same value on all hillslopes)
     pet = np.full(shape=grid_size, fill_value=PET_MPS)
-    model.set_value("pet", pet)
+    model.set_value("e_pot", pet)
+
+
+    # Stop rain (set value to zero)
+    frozen = np.zeros(shape=grid_size, dtype=bool)
+    print(f"{frozen=}")
+    model.set_value("frozen_ground", frozen)
+
+
+
+    # Stop rain (set value to zero)
+    temper = np.full(shape=grid_size, fill_value=20.0)
+    print(f"{temper=}")
+    model.set_value("temperature", temper)
+
+
+
+    q0 = model.get_value_ptr("q")
+    print(f"{q0=}")
+
 
     # Run 15 steps using this values
     target_time = model.get_start_time() + 15 * model.get_time_step()
     model.update_until(target_time)
+    # for _ in range(15):
+    #     model.update()
+    #     q1 = model.get_value_ptr("q")
+    #     print(f"{q1=}")
+
+    # return
+
+
 
     # Stop rain (set value to zero)
     pcp = np.zeros(shape=grid_size)
-    model.set_value("pcp", pcp)
+    model.set_value("rainfall", pcp)
+
+    q = model.get_value_ptr("q")
+    print(f"{q=}")
+
 
     # Run without rain until the end of the simulation
     target_time = model.get_end_time()
     model.update_until(target_time)
+    # model.update()
 
     # Get final values for discharge
     q = model.get_value_ptr("q")
