@@ -13,6 +13,7 @@ class Config:
     start_time: np.datetime64  # seconds since epoch
     end_time: np.datetime64  # seconds since epoch
     time_step: np.timedelta64  # seconds
+    integrator: Literal["euler", "rk4", "rk8", "rk45", "dop853", "lsoda"]
 
     edges_file: Path
     initials_file: Path
@@ -28,12 +29,13 @@ class Config:
         self.start_time = np.datetime64(data["start_time"], self.time_units)
         self.end_time = np.datetime64(data["end_time"], self.time_units)
         self.time_step = np.timedelta64(data["time_step"], self.time_units)
+        self.integrator = data.get("integrator", "rk4")
 
         self.edges_file = Path(data["edges_file"])
         self.initials_file = Path(data["initials_file"])
         self.parameters_file = Path(data["parameters_file"])
 
-        self.globals = data.get("globals", None)
+        self.globals = data.get("globals", None) 
 
         if self.end_time <= self.start_time:
             raise ValueError(
@@ -44,6 +46,12 @@ class Config:
         if self.time_step <= np.timedelta64(0, self.time_units):
             raise ValueError(
                 "time_step must be positive, got " f"time_step={self.time_step}"
+            )
+
+        if self.integrator not in {"euler", "rk4", "rk8", "rk45", "dop853", "lsoda"}:
+            raise ValueError(
+                "integrator must be one of 'euler', 'rk4', 'rk8', 'rk45', "
+                f"'dop853' or 'lsoda', got {self.integrator!r}"
             )
 
         if not self.edges_file.exists():

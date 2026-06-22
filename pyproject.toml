@@ -8,8 +8,11 @@ requires-python = ">=3.9"
 #requires-python = ">=3.10"
 dependencies = [
     "bmipy>=2.0",
+    "dask>=2024.8.0",
     "matplotlib>=3.9.4",
+    "netcdf4>=1.7.2",
     "networkx>=2.8", # old engine
+    "numba>=0.60.0",
     "numpy>=1.21",
     "pandas>=1.4",   # old engine
     "pyyaml>=6.0",   # old engine

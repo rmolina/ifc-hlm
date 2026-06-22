@@ -9,6 +9,8 @@ from typing import Generic, Type, TypeVar
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy.integrate import solve_ivp
+from scipy.integrate._ivp.rk import dop853_coefficients
 
 from .config import Config
 
@@ -134,26 +136,51 @@ class BaseModel(ABC, Generic[I, O, P, G, D, E, F]):
             }
         )
 
+    def _assert_finite_outputs(self, stage: str) -> None:
+        assert is_dataclass(self.outputs)
+
+        invalid_summaries: list[str] = []
+        for field_obj in fields(self.outputs):
+            name = field_obj.name
+            arr = getattr(self.outputs, name)
+            invalid_mask = ~np.isfinite(arr)
+            if not np.any(invalid_mask):
+                continue
+
+            invalid_idx = np.flatnonzero(invalid_mask)
+            node_preview = self.node_ids[invalid_idx[:5]].tolist()
+            invalid_summaries.append(
+                f"{name}: {len(invalid_idx)} invalid values; sample node_ids={node_preview}"
+            )
+
+        if invalid_summaries:
+            joined = "; ".join(invalid_summaries)
+            raise FloatingPointError(
+                f"Non-finite model outputs detected {stage}: {joined}"
+            )
+
     def _initialize_globals(self) -> None:
         assert is_dataclass(self.GlobalsType)
-        print(f"Initializing globals for {self.__class__.__name__}...")
+        # print(f"Initializing globals for {self.__class__.__name__}...")
 
         # Start from defaults
         data = asdict(self.GlobalsType())
 
-        print(f"Config: {self.config}")
+        # print(f"Config: {self.config}")
 
         # Overlay config overrides (if any)
         overrides = getattr(self.config, "globals", None)
         if overrides:
             data.update(overrides)
 
-        print(f"Overrides: {overrides}")
-        print(f"Globals after applying config overrides: {data}")
+        # print(f"Overrides: {overrides}")
+        # print(f"Globals after applying config overrides: {data}")
 
         for key, value in data.items():
-            if data[key]   is None:
-                raise ValueError(f"Global '{key}' is required but not set in config or defaults")
+            if data[key] is None:
+                raise ValueError(
+                    f"Global '{key}' is required but not set in config or defaults"
+                )
 
         # Rebuild dataclass
         self.globals = self.GlobalsType(**data)
@@ -247,6 +274,7 @@ class BaseModel(ABC, Generic[I, O, P, G, D, E, F]):
         self._initialize_globals()
         self._initialize_parameters()
         self._load_initial_conditions()
+        self._assert_finite_outputs("after initialization")
 
         self.current_time = self.config.start_time
         self.initialized = True
@@ -272,100 +300,183 @@ class BaseModel(ABC, Generic[I, O, P, G, D, E, F]):
             arr = getattr(self.outputs, name)
             arr[:] = np.maximum(arr, 0.0)
 
-    def rk4_step(self) -> None:
+    def _outputs_to_vector(self) -> NDArray[np.float64]:
+        return np.concatenate(
+            [
+                np.asarray(getattr(self.outputs, name), dtype=np.float64)
+                for name in self.output_names
+            ]
+        )
+
+    def _vector_to_outputs(self, values: NDArray[np.float64]) -> None:
+        offset = 0
+        for name in self.output_names:
+            arr = getattr(self.outputs, name)
+            width = arr.size
+            arr[:] = values[offset : offset + width]
+            offset += width
+
+    def scipy_step(self, method: str) -> None:
+        """Advance outputs by one time step using SciPy's adaptive solvers."""
+        dt = float(self.config.time_step / np.timedelta64(1, "s"))
+        y0 = self._outputs_to_vector()
+        original_outputs = self.outputs
+
+        def rhs(_: float, y: NDArray[np.float64]) -> NDArray[np.float64]:
+            candidate = self._state_from_vector(y)
+            self.outputs = candidate
+            self.compute_external_fluxes()
+            self.compute_fluxes()
+            self.compute_derivatives()
+            return np.concatenate(
+                [
+                    np.asarray(getattr(self.derivatives, name), dtype=np.float64)
+                    for name in self.output_names
+                ]
+            )
+
+        try:
+            sol = solve_ivp(
+                rhs,
+                (0.0, dt),
+                y0,
+                method=method,
+                t_eval=(dt,),
+                vectorized=False,
+                # atol=1e-2,
+                # rtol=1e-2,
+            )
+            if not sol.success or sol.y.size == 0:
+                raise RuntimeError(f"SciPy solver {method!r} failed: {sol.message}")
+
+            self.outputs = original_outputs
+            self._vector_to_outputs(sol.y[:, -1])
+            for name in self.output_names:
+                arr = getattr(self.outputs, name)
+                arr[:] = np.maximum(arr, 0.0)
+        finally:
+            self.outputs = original_outputs
+
+    def _state_from_vector(self, values: NDArray[np.float64]) -> O:
+        cls: type[O] = type(self.outputs)
+        offset = 0
+        arrays: dict[str, NDArray[np.float64]] = {}
+        for name in self.output_names:
+            width = self.num_nodes
+            arrays[name] = np.array(
+                values[offset : offset + width], dtype=np.float64, copy=True
+            )
+            offset += width
+        return cls(**arrays)
+
+    def _explicit_rk_step(
+        self,
+        a: NDArray[np.float64],
+        b: NDArray[np.float64],
+    ) -> None:
         assert is_dataclass(self.outputs)
         assert is_dataclass(self.derivatives)
 
         dt = float(self.config.time_step / np.timedelta64(1, "s"))
         states = self.outputs
+        state_fields = fields(states)
+        stage_count = len(b)
+
+        stage_derivatives = {
+            field_obj.name: np.empty((stage_count, self.num_nodes), dtype=np.float64)
+            for field_obj in state_fields
+        }
+
+        def evaluate_stage(stage_index: int, candidate_state: O) -> None:
+            self.outputs = candidate_state
+            self.compute_external_fluxes()
+            self.compute_fluxes()
+            self.compute_derivatives()
+            for field_obj in state_fields:
+                name = field_obj.name
+                stage_derivatives[name][stage_index, :] = getattr(
+                    self.derivatives, name
+                )
+
+        evaluate_stage(0, states)
+
         cls: type[O] = type(states)
+        for stage_index in range(1, stage_count):
+            candidate_state = cls(
+                **{
+                    field_obj.name: getattr(states, field_obj.name)
+                    + dt
+                    * np.sum(
+                        a[stage_index, :stage_index, np.newaxis]
+                        * stage_derivatives[field_obj.name][:stage_index],
+                        axis=0,
+                    )
+                    for field_obj in state_fields
+                }
+            )
+            evaluate_stage(stage_index, candidate_state)
 
-        # Allocate k arrays once
-        k1 = cls(
-            **{f.name: np.empty_like(getattr(states, f.name)) for f in fields(states)}
-        )
-        k2 = cls(
-            **{f.name: np.empty_like(getattr(states, f.name)) for f in fields(states)}
-        )
-        k3 = cls(
-            **{f.name: np.empty_like(getattr(states, f.name)) for f in fields(states)}
-        )
-        k4 = cls(
-            **{f.name: np.empty_like(getattr(states, f.name)) for f in fields(states)}
-        )
-
-        # k1 - use current state
-        self.compute_external_fluxes()
-        self.compute_fluxes()
-        self.compute_derivatives()
-
-        for f in fields(states):
-            getattr(k1, f.name)[:] = getattr(self.derivatives, f.name)
-
-        # y2 - intermediate state
-        y2 = cls(
-            **{
-                f.name: getattr(states, f.name) + 0.5 * dt * getattr(k1, f.name)
-                for f in fields(states)
-            }
-        )
-        self.outputs = y2
-        self.compute_external_fluxes()
-        self.compute_fluxes()
-        self.compute_derivatives()
-
-        for f in fields(states):
-            getattr(k2, f.name)[:] = getattr(self.derivatives, f.name)
-
-        # y3 - intermediate state
-        y3 = cls(
-            **{
-                f.name: getattr(states, f.name) + 0.5 * dt * getattr(k2, f.name)
-                for f in fields(states)
-            }
-        )
-        self.outputs = y3
-        self.compute_external_fluxes()
-        self.compute_fluxes()
-        self.compute_derivatives()
-
-        for f in fields(states):
-            getattr(k3, f.name)[:] = getattr(self.derivatives, f.name)
-
-        # y4 - intermediate state
-        y4 = cls(
-            **{
-                f.name: getattr(states, f.name) + dt * getattr(k3, f.name)
-                for f in fields(states)
-            }
-        )
-        self.outputs = y4
-        self.compute_external_fluxes()
-        self.compute_fluxes()
-        self.compute_derivatives()
-
-        for f in fields(states):
-            getattr(k4, f.name)[:] = getattr(self.derivatives, f.name)
-
-        # Restore original states and update
         self.outputs = states
-        for f in fields(states):
-            arr = getattr(states, f.name)
-            arr[:] = arr + (dt / 6.0) * (
-                getattr(k1, f.name)
-                + 2.0 * getattr(k2, f.name)
-                + 2.0 * getattr(k3, f.name)
-                + getattr(k4, f.name)
+        for field_obj in state_fields:
+            name = field_obj.name
+            arr = getattr(states, name)
+            arr[:] = arr + dt * np.sum(
+                b[:, np.newaxis] * stage_derivatives[name],
+                axis=0,
             )
 
-        # Enforce non-negativity
         for name in self.output_names:
             arr = getattr(self.outputs, name)
             arr[:] = np.maximum(arr, 0.0)
 
+    def rk4_step(self) -> None:
+        a = np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0],
+                [0.5, 0.0, 0.0, 0.0],
+                [0.0, 0.5, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+            ],
+            dtype=np.float64,
+        )
+        b = np.array([1.0 / 6.0, 1.0 / 3.0, 1.0 / 3.0, 1.0 / 6.0], dtype=np.float64)
+        self._explicit_rk_step(a, b)
+
+    def rk8_step(self) -> None:
+        stage_count = dop853_coefficients.N_STAGES
+        a = np.array(
+            dop853_coefficients.A[:stage_count, :stage_count],
+            dtype=np.float64,
+            copy=True,
+        )
+        b = np.array(dop853_coefficients.B[:stage_count], dtype=np.float64, copy=True)
+        self._explicit_rk_step(a, b)
+
+    def rk45_step(self) -> None:
+        self.scipy_step("RK45")
+
+    def dop853_step(self) -> None:
+        self.scipy_step("DOP853")
+
+    def lsoda_step(self) -> None:
+        self.scipy_step("LSODA")
+
     def model_update(self) -> None:
-        # self.euler_step()
-        self.rk4_step()
+        if self.config.integrator == "euler":
+            self.euler_step()
+        elif self.config.integrator == "rk45":
+            self.rk45_step()
+        elif self.config.integrator == "dop853":
+            self.dop853_step()
+        elif self.config.integrator == "lsoda":
+            self.lsoda_step()
+        elif self.config.integrator == "rk8":
+            self.rk8_step()
+        else:
+            self.rk4_step()
+        self._assert_finite_outputs(
+            f"after update at time {self.current_time.astype('datetime64[s]')}"
+        )
         self.current_time += self.config.time_step
 
     def _build_graph(self) -> None:

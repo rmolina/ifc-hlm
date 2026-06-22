@@ -7,6 +7,150 @@ from numpy.typing import NDArray
 
 from .bmi_model import BmiModel
 
+try:
+    from numba import njit
+
+    NUMBA_AVAILABLE = True
+except ImportError:  # pragma: no cover - exercised only when numba is absent
+    NUMBA_AVAILABLE = False
+
+    def njit(*args, **kwargs):  # type: ignore[misc]
+        def decorator(func):
+            return func
+
+        return decorator
+
+
+@njit(cache=True)
+def _numba_compute_fluxes(
+    rainfall: NDArray[np.float64],
+    e_pot: NDArray[np.float64],
+    temperature: NDArray[np.float64],
+    frozen_ground: NDArray[np.bool_],
+    h0: NDArray[np.float64],
+    h1: NDArray[np.float64],
+    h2: NDArray[np.float64],
+    h3: NDArray[np.float64],
+    h4: NDArray[np.float64],
+    temp_thres: float,
+    Hu: float,
+    infiltration: float,
+    percolation: float,
+    alpha2: float,
+    alpha3: float,
+    alpha4: float,
+    melt_factor: float,
+    l_i: NDArray[np.float64],
+    a_h: NDArray[np.float64],
+    d0: NDArray[np.float64],
+    out0: NDArray[np.float64],
+    d1: NDArray[np.float64],
+    out1: NDArray[np.float64],
+    d2: NDArray[np.float64],
+    out2: NDArray[np.float64],
+    d3: NDArray[np.float64],
+    out3: NDArray[np.float64],
+    d4: NDArray[np.float64],
+    out4: NDArray[np.float64],
+) -> None:
+    for i in range(rainfall.shape[0]):
+        x1 = 0.0
+        snowmelt = 0.0
+
+        if temperature[i] >= temp_thres:
+            snowmelt = h0[i]
+            candidate = temperature[i] * melt_factor
+            if candidate < snowmelt:
+                snowmelt = candidate
+            x1 = rainfall[i] + snowmelt
+            d0[i] = 0.0
+        else:
+            d0[i] = rainfall[i]
+
+        out0[i] = snowmelt
+
+        x2 = x1 + h1[i] - Hu
+        if x2 < 0.0:
+            x2 = 0.0
+        if frozen_ground[i]:
+            x2 = x1
+
+        d1[i] = x1 - x2
+        out1[i] = e_pot[i]
+        if h1[i] < out1[i]:
+            out1[i] = h1[i]
+
+        infiltration_rate = infiltration
+        if frozen_ground[i]:
+            infiltration_rate = 0.0
+
+        x3 = x2
+        if infiltration_rate < x3:
+            x3 = infiltration_rate
+
+        d2[i] = x2 - x3
+
+        w = alpha2 * l_i[i] / a_h[i]
+        if w > 1.0:
+            w = 1.0
+        out2[i] = h2[i] * w
+
+        x4 = x3
+        if percolation < x4:
+            x4 = percolation
+
+        d3[i] = x3 - x4
+        out3[i] = h3[i] / alpha3
+
+        d4[i] = x4
+        out4[i] = h4[i] / alpha4
+
+
+@njit(cache=True)
+def _numba_compute_derivatives(
+    q: NDArray[np.float64],
+    h0: NDArray[np.float64],
+    h1: NDArray[np.float64],
+    h2: NDArray[np.float64],
+    h3: NDArray[np.float64],
+    h4: NDArray[np.float64],
+    q_external: NDArray[np.float64],
+    invtau: NDArray[np.float64],
+    lambda_1: float,
+    a_h: NDArray[np.float64],
+    d0: NDArray[np.float64],
+    out0: NDArray[np.float64],
+    d1: NDArray[np.float64],
+    out1: NDArray[np.float64],
+    d2: NDArray[np.float64],
+    out2: NDArray[np.float64],
+    d3: NDArray[np.float64],
+    out3: NDArray[np.float64],
+    d4: NDArray[np.float64],
+    out4: NDArray[np.float64],
+    dq: NDArray[np.float64],
+    dh0: NDArray[np.float64],
+    dh1: NDArray[np.float64],
+    dh2: NDArray[np.float64],
+    dh3: NDArray[np.float64],
+    dh4: NDArray[np.float64],
+) -> None:
+    for i in range(q.shape[0]):
+        dh0[i] = d0[i] - out0[i]
+        dh1[i] = d1[i] - out1[i]
+        dh2[i] = d2[i] - out2[i]
+        dh3[i] = d3[i] - out3[i]
+        dh4[i] = d4[i] - out4[i]
+
+        discharge = -q[i] + (out2[i] + out3[i] + out4[i]) * a_h[i] + q_external[i]
+        if lambda_1 < 1.0 and q[i] < 0.0:
+            discharge = 0.0
+
+        q_pos = q[i]
+        if q_pos < 0.0:
+            q_pos = 0.0
+        dq[i] = invtau[i] * (q_pos**lambda_1) * discharge
+
 
 @dataclass
 class Globals:
@@ -278,6 +422,45 @@ class Model400(
 
     def compute_fluxes(self) -> None:
         """Compute all fluxes and store in self.fluxes."""
+        if NUMBA_AVAILABLE:
+            self.inputs.frozen_ground = self.inputs.frozen_ground.astype(bool)
+            _numba_compute_fluxes(
+                self.inputs.rainfall,
+                self.inputs.e_pot,
+                self.inputs.temperature,
+                self.inputs.frozen_ground,
+                self.outputs.h0,
+                self.outputs.h1,
+                self.outputs.h2,
+                self.outputs.h3,
+                self.outputs.h4,
+                float(self.globals.temp_thres),
+                float(self.globals.Hu),
+                float(self.globals.infiltration),
+                float(self.globals.percolation),
+                float(self.globals.alpha2),
+                float(self.globals.alpha3),
+                float(self.globals.alpha4),
+                float(self.globals.melt_factor),
+                self.parameters.l_i,
+                self.parameters.a_h,
+                self.fluxes.d0,
+                self.fluxes.out0,
+                self.fluxes.d1,
+                self.fluxes.out1,
+                self.fluxes.d2,
+                self.fluxes.out2,
+                self.fluxes.d3,
+                self.fluxes.out3,
+                self.fluxes.d4,
+                self.fluxes.out4,
+            )
+            return
+
+        self.legacy_compute_fluxes()
+
+    def legacy_compute_fluxes(self) -> None:
+        """Reference NumPy implementation of the flux calculations."""
         # snow storage
 
         x1 = np.zeros_like(self.inputs.temperature)
@@ -285,10 +468,14 @@ class Model400(
         mask = self.inputs.temperature >= self.globals.temp_thres
 
         snowfall = np.zeros_like(x1)
+        # if temperature is below the threshold, all rainfall goes to snow storage
         snowfall[~mask] = self.inputs.rainfall[~mask]
 
-        snowmelt = np.minimum(
-            self.outputs.h0, self.inputs.temperature * self.globals.melt_factor
+        # Snowmelt is only active for nodes above the rain/snow threshold.
+        snowmelt = np.zeros_like(x1)
+        snowmelt[mask] = np.minimum(
+            self.outputs.h0[mask],
+            self.inputs.temperature[mask] * self.globals.melt_factor,
         )
 
         x1[mask] = self.inputs.rainfall[mask] + snowmelt[mask]
@@ -305,15 +492,22 @@ class Model400(
 
         # if ground is frozen, x1 goes directly to the surface
         # therefore nothing is diverted to static tank
+        # print(f"{self.inputs.frozen_ground=}")
+        self.inputs.frozen_ground = self.inputs.frozen_ground.astype(
+            bool
+        )  # Ensure boolean type
+
         x2[self.inputs.frozen_ground] = x1[self.inputs.frozen_ground]
 
+        #  input to static tank
         self.fluxes.d1 = x1 - x2
 
-        #  input to static tank
+        # evaporation from the static tank. it cannot evaporate more than h1 [m]
         self.fluxes.out1 = np.minimum(self.inputs.e_pot, self.outputs.h1)
 
-        # evaporation from the static tank. it cannot evaporate more than h1 [m]
         # float out1 = (e_pot > h1) ? e_pot : 0.0;
+
+        # ===
 
         # surface storage tank
 
@@ -327,9 +521,18 @@ class Model400(
         self.fluxes.d2 = x2 - x3
 
         #  the input to surface storage
-        w = self.globals.alpha2 * self.parameters.l_i / self.parameters.a_h  # [1/s]
+        # ASYNCH keeps the raw `km` / `km^2` magnitudes in this term.
+        # We convert the SI ratio back to the reference scale so the surface
+        # residence time matches the C implementation numerically.
+        w = (
+            self.globals.alpha2  # m s-1
+            * self.parameters.l_i  # m
+            / self.parameters.a_h  # m2
+            # * 1.0e3
+        )  # 1/s
 
-        w = min(1, w)
+        # print(f"{w=}")
+        w = np.minimum(1.0, w)
         # water can take less than 1 min (dt) to leave surface
 
         self.fluxes.out2 = self.outputs.h2 * w  # direct runoff [m/s]
@@ -353,6 +556,42 @@ class Model400(
 
     def compute_derivatives(self) -> None:
         """Compute derivatives using current fluxes and forcings."""
+        if NUMBA_AVAILABLE:
+            _numba_compute_derivatives(
+                self.outputs.q,
+                self.outputs.h0,
+                self.outputs.h1,
+                self.outputs.h2,
+                self.outputs.h3,
+                self.outputs.h4,
+                self.externals.q,
+                self.parameters.invtau,
+                float(self.globals.lambda_1),
+                self.parameters.a_h,
+                self.fluxes.d0,
+                self.fluxes.out0,
+                self.fluxes.d1,
+                self.fluxes.out1,
+                self.fluxes.d2,
+                self.fluxes.out2,
+                self.fluxes.d3,
+                self.fluxes.out3,
+                self.fluxes.d4,
+                self.fluxes.out4,
+                self.derivatives.q,
+                self.derivatives.h0,
+                self.derivatives.h1,
+                self.derivatives.h2,
+                self.derivatives.h3,
+                self.derivatives.h4,
+            )
+            self.derivatives.h5[:] = 0.0
+            return
+
+        self.legacy_compute_derivatives()
+
+    def legacy_compute_derivatives(self) -> None:
+        """Reference NumPy implementation of the derivative calculations."""
 
         self.derivatives.h0 = self.fluxes.d0 - self.fluxes.out0
         self.derivatives.h1 = self.fluxes.d1 - self.fluxes.out1
@@ -360,21 +599,28 @@ class Model400(
         self.derivatives.h3 = self.fluxes.d3 - self.fluxes.out3
         self.derivatives.h4 = self.fluxes.d4 - self.fluxes.out4
 
-        q = (
+        discharge = (
             -self.outputs.q
             + (self.fluxes.out2 + self.fluxes.out3 + self.fluxes.out4)
-            * self.parameters.a_h
+            # * (self.parameters.a_h / 1.0e6)
+            # rmolina
+            * (self.parameters.a_h)
             + self.externals.q
         )  # m3 s-1
 
         Q_R = 1.0  # reference discharge [m3 s-1]
-        self.derivatives.q = (
-            self.parameters.invtau * pow(q / Q_R, self.globals.lambda_1) * q
+        if self.globals.lambda_1 < 1.0:
+            discharge = np.where(self.outputs.q < 0.0, 0.0, discharge)
+
+        self.derivatives.q[:] = (
+            self.parameters.invtau
+            * np.power(np.maximum(self.outputs.q / Q_R, 0.0), self.globals.lambda_1)
+            * discharge
         )  # m3 s-2
 
     def compute_external_fluxes(self) -> None:
         """Compute external fluxes and store in self.externals."""
-        q_src = np.maximum(self.outputs.q[self.edges_src], 1e-6)  # Clamp sources
+        q_src = np.maximum(self.outputs.q[self.edges_src], 0.0)
         q_in = np.bincount(
             self.edges_dst,
             weights=q_src,
@@ -384,6 +630,12 @@ class Model400(
 
     def compute_extra_parameters(self) -> None:
         """Compute derived parameters and store in self.parameters."""
+
+        # The Cedar parameter files store channel length in km and areas in km^2.
+        # Convert once here so the rest of the vectorized implementation works in SI.
+        self.parameters.a_i[:] *= 1.0e6
+        self.parameters.l_i[:] *= 1.0e3
+        self.parameters.a_h[:] *= 1.0e6
 
         A_R = 1.0e6  # m2 (Reference area)
 
